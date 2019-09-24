@@ -1,0 +1,6 @@
+---
+- name: Installing ...
+  apt:
+    name: sqlite
+    state: latest
+  become: yes

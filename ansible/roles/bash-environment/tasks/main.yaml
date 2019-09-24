@@ -1,0 +1,26 @@
+---
+- name: Cloning repository ...
+  git:
+    repo: https://github.com/neilluna/bash-environment.git
+    dest: ~/provisioning/bash-environment
+  register: bash_environment_clone
+
+- name: Setting filemode off ...
+  git_config:
+    name: core.filemode
+    repo: ~/provisioning/bash-environment
+    scope: local
+    value: 'false'
+  when: bash_environment_clone.before != bash_environment_clone.after
+
+- name: Making install.sh executable ...
+  file:
+    path: ~/provisioning/bash-environment/install.sh
+    state: file
+    mode: u+x
+  when: bash_environment_clone.before != bash_environment_clone.after
+
+- name: Installing environment ...
+  shell: ~/provisioning/bash-environment/install.sh
+  notify: "bash-environment updated"
+  when: bash_environment_clone.before != bash_environment_clone.after

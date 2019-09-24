@@ -1,0 +1,6 @@
+---
+- name: Installing ...
+  apt:
+    name: zip
+    state: latest
+  become: yes

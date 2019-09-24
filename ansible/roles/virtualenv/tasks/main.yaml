@@ -1,0 +1,6 @@
+---
+- name: Installing ...
+  pip:
+    name: virtualenv
+    state: latest
+  become: yes

@@ -1,0 +1,4 @@
+---
+- name: Creating or updating ~/.gitconfig ...
+  listen: "bash-environment updated"
+  shell: ~/bin/create-gitconfig.sh "{{ git_user_name }}" "{{ git_user_email }}"

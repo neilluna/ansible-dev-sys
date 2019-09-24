@@ -1,0 +1,43 @@
+---
+- hosts: self
+  roles:
+  - role: update
+  - role: upgrade
+  - role: git
+  - role: bash-environment
+  - role: ansible-environment
+  - role: git-environment
+    when: provision_git_environment == true
+  - role: git-configuration
+    vars:
+      git_user_name: "{{ git_user_name }}"
+      git_user_email: "{{ git_user_email }}"
+    when: provision_git_environment == true
+  - role: build-essential
+  - role: python2
+  - role: python3
+  - role: virtualenv
+  - role: virtualenvwrapper
+  - role: pipenv
+  - role: ruby
+  - role: linuxbrew
+  - role: awscli
+# - role: awscli-environment
+#   vars:
+#     aws_access_key_id: "{{ aws_access_key_id }}"
+#     aws_secret_access_key: "{{ aws_secret_access_key }}"
+#   when: provision_aws_environment == true
+  - role: nvm
+    vars:
+      nvm_version: "0.34.0"
+  - role: nodejs
+    vars:
+      nodejs_version: "10.16.3"
+  - role: docker
+    vars:
+      docker_compose_version: "1.24.1"
+      docker_users:
+      - "{{ vagrant_user }}"
+  - role: sqlite
+  - role: unzip
+  - role: zip

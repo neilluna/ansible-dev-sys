@@ -1,0 +1,6 @@
+---
+- name: Configuring ...
+  shell: bash -c "echo -e '{{ aws_access_key_id }}\n{{ aws_secret_access_key }}\nus-east-1\njson\n' | pipenv run aws configure"
+  args:
+    chdir: ~/awscli
+    creates: ~/.aws

@@ -1,0 +1,5 @@
+---
+- name: Running apt upgrade ...
+  apt:
+    upgrade: safe
+  become: yes

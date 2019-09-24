@@ -1,0 +1,12 @@
+---
+- name: Installing ...
+  pip:
+    name: pipenv
+    state: latest
+  become: yes
+
+- name: Installing environment ...
+  copy:
+    src: .bashrc.d/pipenv-vars.sh
+    dest: ~/.bashrc.d/pipenv-vars.sh
+    mode: u+x

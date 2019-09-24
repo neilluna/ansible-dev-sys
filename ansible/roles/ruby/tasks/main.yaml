@@ -1,0 +1,6 @@
+---
+- name: Installing ...
+  apt:
+    name: ruby-full
+    state: latest
+  become: yes

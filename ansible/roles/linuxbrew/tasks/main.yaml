@@ -1,0 +1,17 @@
+---
+- name: Downloading installation ...
+  get_url:
+    url: https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh
+    dest: ~/provisioning/linuxbrew_install.sh
+    mode: u+rwx,go+rx-w
+
+# - name: Installing ...
+#   shell: ~/provisioning/linuxbrew_install.sh
+#   args:
+#     creates: ~/.nvm/nvm.sh
+
+- name: Installing environment ...
+  copy:
+    src: .bashrc.d/linuxbrew-vars.sh
+    dest: ~/.bashrc.d/linuxbrew-vars.sh
+    mode: u+x

@@ -1,0 +1,5 @@
+---
+- name: Running apt update ...
+  apt:
+    update_cache: yes
+  become: yes

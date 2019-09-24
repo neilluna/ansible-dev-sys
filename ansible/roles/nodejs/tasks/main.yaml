@@ -1,0 +1,5 @@
+---
+- name: Installing ...
+  shell: bash -c "source ~/.nvm/nvm.sh && nvm install {{ nodejs_version }} && nvm alias default {{ nodejs_version }}"
+  args:
+    creates: ~/.nvm/alias

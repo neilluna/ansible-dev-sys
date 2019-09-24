@@ -1,0 +1,11 @@
+---
+- name: Creating the virtual environment ...
+  command: virtualenv ~/.virtualenvs/awscli -p python3
+  args:
+    creates: ~/.virtualenvs/awscli
+
+- name: Installing ...
+  pip:
+    name: awscli
+    state: latest
+    virtualenv: ~/.virtualenvs/awscli

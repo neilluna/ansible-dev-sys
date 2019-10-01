@@ -1,0 +1,11 @@
+---
+- name: Installing dependencies ...
+  apt:
+    name: libnss3-tools
+    state: latest
+  become: yes
+
+- name: Installing ...
+  shell: bash -c "source ~/.bashrc.d/linuxbrew-vars.sh && brew install mkcert"
+  args:
+    creates: /home/linuxbrew/.linuxbrew/bin/mkcert

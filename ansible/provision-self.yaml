@@ -21,6 +21,7 @@
   - role: pipenv
   - role: ruby
   - role: linuxbrew
+  - role: mkcert
   - role: awscli
 # - role: awscli-environment
 #   vars:

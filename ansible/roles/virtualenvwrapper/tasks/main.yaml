@@ -1,6 +1,0 @@
----
-- name: Installing ...
-  pip:
-    name: virtualenvwrapper
-    state: latest
-  become: yes

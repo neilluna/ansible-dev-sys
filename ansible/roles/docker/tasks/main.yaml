@@ -32,14 +32,5 @@
     name: "{{ item }}"
     groups: docker
     append: yes
-  with_items: "{{ docker_users }}"
-  become: yes
-
-- name: Installing Docker Compose ...
-  get_url:
-    url: https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64
-    dest: /usr/local/bin/docker-compose
-    group: root
-    mode: u+rwx,go+rx-w
-    owner: root
+  with_items: "{{ docker.users }}"
   become: yes

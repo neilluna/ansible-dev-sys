@@ -1,4 +1,3 @@
 ---
 dependencies:
-- role: bash-environment
 - role: git

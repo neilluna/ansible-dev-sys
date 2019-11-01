@@ -1,11 +1,38 @@
 ---
-- name: Downloading installation ...
-  get_url:
-    url: https://raw.githubusercontent.com/creationix/nvm/v{{ nvm_version }}/install.sh
-    dest: ~/provisioning/nvm_install.sh
-    mode: u+rwx,go+rx-w
+- name: Deploying from the repository ...
+  git:
+    repo: https://github.com/nvm-sh/nvm.git
+    dest: ~/.nvm
+    version: "v{{ nvm.version }}"
+  environment:
+    NVM_HOME: ~/.nvm
+  register: nvm_status
 
-- name: Installing ...
-  shell: ~/provisioning/nvm_install.sh
-  args:
-    creates: ~/.nvm/nvm.sh
+- name: Installing or updating ...
+  block:
+
+  - name: Setting the local core filemode ...
+    git_config:
+      name: core.filemode
+      repo: ~/.nvm
+      scope: local
+      value: "false"
+
+  - name: Making nvm.sh executable ...
+    file:
+      path: ~/.nvm/nvm.sh
+      state: file
+      mode: u+x
+
+  - name: Installing or updating ...
+    shell: ~/.nvm/nvm.sh
+    environment:
+      NVM_HOME: ~/.nvm
+
+  when: nvm_status.before != nvm_status.after
+
+- name: Installing the environment ...
+  copy:
+    src: .bashrc.d/nvm-vars.sh
+    dest: ~/.bashrc.d/nvm-vars.sh
+    mode: u+x

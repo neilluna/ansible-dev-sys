@@ -5,7 +5,13 @@
     state: latest
   become: yes
 
-- name: Installing ...
-  shell: bash -c "source ~/.bashrc.d/linuxbrew-vars.sh && brew install mkcert"
-  args:
-    creates: /home/linuxbrew/.linuxbrew/bin/mkcert
+- name: Updating ...
+  homebrew:
+    name: mkcert
+  environment:
+    HOMEBREW_CELLAR: /home/linuxbrew/.linuxbrew/Cellar
+    HOMEBREW_PREFIX: /home/linuxbrew/.linuxbrew
+    HOMEBREW_REPOSITORY: /home/linuxbrew/.linuxbrew/Homebrew
+    INFOPATH: /home/linuxbrew/.linuxbrew/share/info
+    MANPATH: /home/linuxbrew/.linuxbrew/share/man
+    PATH: "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:{{ ansible_env.PATH }}"

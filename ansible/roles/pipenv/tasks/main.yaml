@@ -5,8 +5,6 @@
     state: latest
   become: yes
 
-- name: Installing environment ...
-  copy:
-    src: .bashrc.d/pipenv-vars.sh
-    dest: ~/.bashrc.d/pipenv-vars.sh
-    mode: u+x
+- name: Installing the environment ...
+  shell: ~/provisioning/bash-environment/install.sh --pipenv-venv-in-project
+  when: bash_environment_status.before != bash_environment_status.after

@@ -1,16 +1,36 @@
 ---
-- name: Downloading installation ...
-  get_url:
-    url: https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh
-    dest: ~/provisioning/linuxbrew_install.sh
-    mode: u+rwx,go+rx-w
+- name: Checking if already installed ...
+  stat:
+    path: /home/linuxbrew/.linuxbrew/bin/brew
+  register: linuxbrew_status
 
 - name: Installing ...
-  shell: ~/provisioning/linuxbrew_install.sh < /dev/null
-  args:
-    creates: /home/linuxbrew/.linuxbrew/bin/brew
+  block:
 
-- name: Installing environment ...
+  - name: Downloading installation ...
+    get_url:
+      url: https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh
+      dest: ~/provisioning/linuxbrew_install.sh
+      mode: u+rwx,go+rx-w
+
+  - name: Installing ...
+    shell: ~/provisioning/linuxbrew_install.sh < /dev/null
+
+  when: linuxbrew_status.stat.exists == false
+
+- name: Updating ...
+  homebrew:
+    update_homebrew: yes
+  environment:
+    HOMEBREW_CELLAR: /home/linuxbrew/.linuxbrew/Cellar
+    HOMEBREW_PREFIX: /home/linuxbrew/.linuxbrew
+    HOMEBREW_REPOSITORY: /home/linuxbrew/.linuxbrew/Homebrew
+    INFOPATH: /home/linuxbrew/.linuxbrew/share/info
+    MANPATH: /home/linuxbrew/.linuxbrew/share/man
+    PATH: "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:{{ ansible_env.PATH }}"
+  when: linuxbrew_status.stat.exists == true
+
+- name: Installing the environment ...
   copy:
     src: .bashrc.d/linuxbrew-vars.sh
     dest: ~/.bashrc.d/linuxbrew-vars.sh

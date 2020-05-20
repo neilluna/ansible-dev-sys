@@ -1,26 +1,46 @@
 ---
+- name: Preparing to merge variables ...
+  set_fact:
+    default_var__to_merge: '{{ bash_environment_defaults }}'
+    new_var__to_merge: '{{ bash_environment | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    suffix_to_merge: var__to_merge
+    merged_var_name: merged_var
+    expected_type: dict
+    recursive_dict_merge: yes
+
+- name: Saving the merged variable ...
+  set_fact:
+    bash_environment: '{{ merged_var }}'
+
+- name: Print the merged variable ...
+  debug:
+    msg: '{{ bash_environment }}'
+
 - name: Deploying from the repository ...
   git:
-    repo: https://github.com/neilluna/bash-environment.git
-    dest: ~/provisioning/bash-environment
+    repo: "{{ bash_environment.repo }}"
+    dest: "{{ bash_environment.dest }}"
     version: "{{ bash_environment.version }}"
   register: bash_environment_status
 
 - name: Setting the local core filemode ...
   git_config:
     name: core.filemode
-    repo: ~/provisioning/bash-environment
+    repo: "{{ bash_environment.dest }}"
     scope: local
     value: "false"
   when: bash_environment_status.before != bash_environment_status.after
 
 - name: Making install.sh executable ...
   file:
-    path: ~/provisioning/bash-environment/install.sh
+    path: "{{ bash_environment.dest }}/install.sh"
     state: file
     mode: u+x
   when: bash_environment_status.before != bash_environment_status.after
 
-- name: Installing the environment ...
-  shell: ~/provisioning/bash-environment/install.sh
-  when: bash_environment_status.before != bash_environment_status.after
+# - name: Installing the environment ...
+#   shell: "{{ bash_environment.dir }}/install.sh"
+#   when: bash_environment_status.before != bash_environment_status.after

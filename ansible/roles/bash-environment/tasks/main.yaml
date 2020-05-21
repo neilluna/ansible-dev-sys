@@ -15,10 +15,6 @@
   set_fact:
     bash_environment: '{{ merged_var }}'
 
-- name: Print the merged variable ...
-  debug:
-    msg: '{{ bash_environment }}'
-
 - name: Deploying from the repository ...
   git:
     repo: "{{ bash_environment.repo }}"
@@ -41,6 +37,6 @@
     mode: u+x
   when: bash_environment_status.before != bash_environment_status.after
 
-# - name: Installing the environment ...
-#   shell: "{{ bash_environment.dir }}/install.sh"
-#   when: bash_environment_status.before != bash_environment_status.after
+- name: Installing the environment ...
+  shell: "{{ bash_environment.dest }}/install.sh"
+  when: bash_environment_status.before != bash_environment_status.after

@@ -1,9 +1,5 @@
 ---
 - hosts: dev_sys
-  # vars:
-  #   docker:
-  #     users:
-  #     - "{{ vagrant_user }}"
   roles:
   - role: update
   - role: upgrade

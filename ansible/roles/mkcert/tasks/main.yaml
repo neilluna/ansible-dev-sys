@@ -2,10 +2,11 @@
 - name: Installing dependencies ...
   apt:
     name: libnss3-tools
+    force_apt_get: yes
     state: latest
   become: yes
 
-- name: Updating ...
+- name: Installing or updating ...
   homebrew:
     name: mkcert
   environment:

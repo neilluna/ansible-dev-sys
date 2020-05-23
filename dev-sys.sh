@@ -179,6 +179,9 @@ echo_color ${cyan} "Current directory: '$(pwd)'"
 # Make installations non-interactive.
 export DEBIAN_FRONTEND=noninteractive
 
+# Do not buffer Python stdout.
+export PYTHONUNBUFFERED=TRUE
+
 # Create /opt if it is missing.
 create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
 
@@ -197,6 +200,21 @@ retry_if_fail sudo apt-get install --yes git
 # Create the provisioning assets directory.
 assets_dir=${HOME}/.dev-sys
 create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
+
+# If needed, create a dev-sys.sh proxy script.
+dev_sys_script=${assets_dir}/dev-sys.sh
+if [ ! -f ${dev_sys_script} ]; then
+	echo_color ${cyan} "Creating ${dev_sys_script} ..."
+	cat <<-EOF > ${dev_sys_script}
+	#!/usr/bin/env bash
+	dev_sys_script=${script_path}
+	EOF
+	cat <<-'EOF' >> ${dev_sys_script}
+	${dev_sys_script} "${@}"
+	exit ${?}
+	EOF
+	chmod ${ASSET_SCRIPT_MODE} ${dev_sys_script}
+fi
 
 # Install or update pyenv.
 # Using pyenv will reduce the risk of corrupting the system Python.
@@ -252,11 +270,10 @@ if [ -z "$(pyenv versions | awk '/^\*?\s+/ && ($1 == "*" ? $2 : $1) == "dev-sys"
 	echo_color ${cyan} "Creating the dev-sys Python virtual environment ..."
 	pyenv virtualenv ${python_version} dev-sys
 fi
-echo_color ${cyan} "Setting ${assets_dir} to use the dev-sys Python virtual environment ..."
-cd ${assets_dir}
-pyenv local dev-sys
+echo_color ${cyan} "Setting PYENV_VERSION to use the dev-sys Python virtual environment ..."
+export PYENV_VERSION=dev-sys 
 
-export ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
+ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
 ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
 if [ -f ${ansible_dev_sys_dir_script} ]; then
 	echo_color ${cyan} "Sourcing ${ansible_dev_sys_dir_script} ..."
@@ -277,7 +294,6 @@ elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
 fi
 
 # Install or update Ansible.
-cd ${assets_dir}
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
 	echo_color ${cyan} "Installing Ansible ..."
 	retry_if_fail pip install ansible --disable-pip-version-check
@@ -359,18 +375,55 @@ cat << EOF > ${ansible_group_vars_file}
 EOF
 chmod ${ASSET_FILE_MODE} ${ansible_group_vars_file}
 
-export BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
+BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
 bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
 if [ -f ${bash_environment_dir_script} ]; then
 	echo_color ${cyan} "Sourcing ${bash_environment_dir_script} ..."
 	source ${bash_environment_dir_script}
 fi
 
+# Determine the Ansible bash-environment role needs to force an install.
+bash_environment_force_install=false
+# If bash-environment exists and does not have a git repository, then track changes to it via hashes.
+if [ -d ${BASH_ENVIRONMENT_DIR} -a ! -d ${BASH_ENVIRONMENT_DIR}/.git ]; then
+	cd ${BASH_ENVIRONMENT_DIR}
+	echo_color ${cyan} "Computing the hash of ${BASH_ENVIRONMENT_DIR} ..."
+	bash_environment_hash=$(find . -type f | sort | xargs sha1sum | sha1sum | awk '{ print $1}')
+
+	bash_environment_previous_hash_script=${assets_dir}/bash-environment-previous-hash.sh
+	if [ -f ${bash_environment_previous_hash_script} ]; then
+		echo_color ${cyan} "Sourcing ${bash_environment_previous_hash_script} ..."
+		source ${bash_environment_previous_hash_script}
+		if [ "${bash_environment_hash}" != "${bash_environment_previous_hash}" ]; then
+			bash_environment_force_install=true
+		fi
+	else
+		bash_environment_force_install=true
+	fi
+
+	echo_color ${cyan} "Creating ${bash_environment_previous_hash_script} ..."
+	cat <<-EOF > ${bash_environment_previous_hash_script}
+	#!/usr/bin/env bash
+	bash_environment_previous_hash=${bash_environment_hash}
+	EOF
+	chmod ${ASSET_SCRIPT_MODE} ${bash_environment_previous_hash_script}
+fi
+echo_color ${cyan} "bash-environment force install = ${bash_environment_force_install}"
+
 # Add the bash-environment variables to the Ansible group variables.
 echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
 cat << EOF >> ${ansible_group_vars_file}
 bash_environment:
   dir: ${BASH_ENVIRONMENT_DIR}
+  force_install: ${bash_environment_force_install}
+EOF
+
+# Add the docker variables to the Ansible group variables.
+echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
+cat << EOF >> ${ansible_group_vars_file}
+docker:
+  users:
+  - $(whoami)
 EOF
 
 # Create the Ansible inventory file.
@@ -393,33 +446,10 @@ inventory = ${ansible_inventory_file}
 roles_path = ${ANSIBLE_DEV_SYS_DIR}/ansible/roles
 EOF
 chmod ${ASSET_FILE_MODE} ${ansible_config_file}
-
-ansible_vars_script=${ansible_assets_dir}/ansible-vars.sh
-echo_color ${cyan} "Creating ${ansible_vars_script} ..."
-cat << EOF > ${ansible_vars_script}
-#!/usr/bin/env bash
 export ANSIBLE_CONFIG=${ansible_config_file}
-export PYTHONUNBUFFERED=1
-EOF
-chmod ${ASSET_FILE_MODE} ${ansible_vars_script}
-
-echo_color ${cyan} "Sourcing ${ansible_vars_script} ..."
-source ${ansible_vars_script}
 
 ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
-ansible_play_script=${ansible_assets_dir}/ansible-play.sh
-echo_color ${cyan} "Creating ${ansible_play_script} ..."
-cat << EOF > ${ansible_play_script}
-#!/usr/bin/env bash
-ansible_playbook_dir=${ansible_playbook_dir}
-EOF
-cat << 'EOF' >> ${ansible_play_script}
-ansible-playbook ${ansible_playbook_dir}/${1}.yml || exit 1
-exit 0
-EOF
-chmod ${ASSET_SCRIPT_MODE} ${ansible_play_script}
-
 echo_color ${cyan} "Running Ansible playbook '${playbook_name}' ..."
-${ansible_play_script} ${playbook_name} || exit 1
+ansible-playbook ${ansible_playbook_dir}/${playbook_name}.yml || exit 1
 
 exit 0

@@ -9,6 +9,7 @@
   register: nvm_status
 
 - name: Installing or updating ...
+  when: nvm_status.before != nvm_status.after
   block:
 
   - name: Setting the local core filemode ...
@@ -29,7 +30,7 @@
     environment:
       NVM_HOME: ~/.nvm
 
-  when: nvm_status.before != nvm_status.after
+  # End of block: name: Installing or updating ...
 
 - name: Installing the environment ...
   copy:

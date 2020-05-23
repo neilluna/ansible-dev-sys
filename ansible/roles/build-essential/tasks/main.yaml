@@ -2,5 +2,6 @@
 - name: Installing ...
   apt:
     name: build-essential
+    force_apt_get: yes
     state: latest
   become: yes

@@ -14,40 +14,42 @@
 - name: Saving the merged variable ...
   set_fact:
     bash_environment: '{{ merged_var }}'
+    bash_environment_updated: false
 
 - name: Checking if bash-environment is already installed ...
   stat:
     path: '{{ bash_environment.dir }}'
   register: bash_environment_dir
 
-- name: Checking if bash-environment is a git workspace ...
+- name: Checking if bash-environment has a git repository ...
   stat:
     path: '{{ bash_environment.dir }}/.git'
   register: bash_environment_repo
 
-- name: Installing or updating ...
+- name: Cloning or updating ...
+  when: (bash_environment_dir.stat.exists == false) or (bash_environment_repo.stat.exists == true)
   block:
 
-  - name: Installing or updating from the repository ...
+  - name: Cloning or updating the git workspace repository ...
     git:
       repo: "{{ bash_environment.repo }}"
       dir: "{{ bash_environment.dir }}"
     register: bash_environment_status
 
-  - name: Checking if an install or update happened ...
+  - name: Flagging a clone or update ...
+    when: bash_environment_status.before != bash_environment_status.after
     set_fact:
-      bash_environment_updated: '{{ bash_environment_status.before != bash_environment_status.after }}'
+      bash_environment_updated: true
 
   - name: Setting the local core filemode ...
+    when: bash_environment_updated == true
     git_config:
       name: core.filemode
       repo: "{{ bash_environment.dir }}"
       scope: local
       value: "false"
-    when: bash_environment_updated == true
 
-  # block executed when bash-environment does not exist, or is a git workspace.
-  when: (bash_environment_dir.stat.exists == false) or (bash_environment_repo.stat.exists == true)
+  # End of block: name: Cloning or updating ...
 
 - name: Making install.sh executable ...
   file:
@@ -56,4 +58,5 @@
     mode: u+x
 
 - name: Installing the environment ...
+  when: (bash_environment_updated == true) or (bash_environment.force_install == true)
   shell: "{{ bash_environment.dir }}/install.sh"

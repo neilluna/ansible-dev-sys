@@ -1,15 +1,15 @@
 ---
 - name: Installing ...
   shell: bash -c "source ~/.nvm/nvm.sh && nvm install {{ nodejs.version }}"
-  register: nvm_install_status
-  changed_when: "'is already installed.' not in nvm_install_status.stderr"
+  register: nvm_installation
+  changed_when: "'is already installed.' not in nvm_installation.stderr"
 
 - name: Checking the default version ...
   shell: bash -c "source ~/.nvm/nvm.sh && nvm ls --no-colors | grep -e 'default -> {{ nodejs.version }}'"
-  register: nvm_check_default
+  register: nvm_check_for_correct_version
   changed_when: False
   failed_when: False
 
 - name: Setting the default version ...
   shell: bash -c "source ~/.nvm/nvm.sh && nvm alias default {{ nodejs.version }}"
-  when: nvm_check_default.rc != 0
+  when: nvm_check_for_correct_version.rc != 0

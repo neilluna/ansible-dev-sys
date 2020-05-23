@@ -1,4 +1,20 @@
 ---
+- name: Preparing to merge variables ...
+  set_fact:
+    default_var__to_merge: '{{ docker_defaults }}'
+    new_var__to_merge: '{{ docker | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    expected_type: dict
+    merged_var_name: merged_var
+    recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
+
+- name: Saving the merged variable ...
+  set_fact:
+    docker: '{{ merged_var }}'
+
 - name: Adding the apt key ...
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
@@ -11,12 +27,14 @@
 
 - name: Running apt update ...
   apt:
+    force_apt_get: yes
     update_cache: yes
   become: yes
 
-- name: Installing ...
+- name: Installing or updating ...
   apt:
     name: docker-ce
+    force_apt_get: yes
     state: latest
   become: yes
 
@@ -30,7 +48,8 @@
 - name: Adding users to the Docker group ...
   user:
     name: "{{ item }}"
-    groups: docker
+    groups:
+    - docker
     append: yes
   with_items: "{{ docker.users }}"
   become: yes

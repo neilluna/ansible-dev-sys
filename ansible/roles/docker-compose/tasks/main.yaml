@@ -8,7 +8,7 @@
     owner: root
   become: yes
 
-- name: Creating the symbolic link for Docker Compose ...
+- name: Creating symbolic links ...
   file:
     src: /usr/local/bin/docker-compose
     dest: /usr/bin/docker-compose

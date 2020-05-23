@@ -1,0 +1,6 @@
+---
+- name: Installing ...
+  copy:
+    src: .bashrc.d/pyenv-vars.sh
+    dest: ~/.bashrc.d/pyenv-vars.sh
+    mode: u+x

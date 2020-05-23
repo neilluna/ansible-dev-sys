@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-
-# Keep this script idempotent. It will probably be called multiple times.
-
 export HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar
 export HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew
 export HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew

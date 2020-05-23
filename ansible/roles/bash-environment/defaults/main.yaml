@@ -1,5 +1,4 @@
 ---
 bash_environment_defaults:
-  dest: ~/.bash-environment
+  dir: ~/.bash-environment
   repo: https://github.com/neilluna/bash-environment.git
-  version: master

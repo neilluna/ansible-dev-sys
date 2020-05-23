@@ -6,37 +6,54 @@
 
 - name: Merging the variables ...
   merge_vars:
-    suffix_to_merge: var__to_merge
-    merged_var_name: merged_var
     expected_type: dict
+    merged_var_name: merged_var
     recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
 
 - name: Saving the merged variable ...
   set_fact:
     bash_environment: '{{ merged_var }}'
 
-- name: Deploying from the repository ...
-  git:
-    repo: "{{ bash_environment.repo }}"
-    dest: "{{ bash_environment.dest }}"
-    version: "{{ bash_environment.version }}"
-  register: bash_environment_status
+- name: Checking if bash-environment is already installed ...
+  stat:
+    path: '{{ bash_environment.dir }}'
+  register: bash_environment_dir
 
-- name: Setting the local core filemode ...
-  git_config:
-    name: core.filemode
-    repo: "{{ bash_environment.dest }}"
-    scope: local
-    value: "false"
-  when: bash_environment_status.before != bash_environment_status.after
+- name: Checking if bash-environment is a git workspace ...
+  stat:
+    path: '{{ bash_environment.dir }}/.git'
+  register: bash_environment_repo
+
+- name: Installing or updating ...
+  block:
+
+  - name: Installing or updating from the repository ...
+    git:
+      repo: "{{ bash_environment.repo }}"
+      dir: "{{ bash_environment.dir }}"
+    register: bash_environment_status
+
+  - name: Checking if an install or update happened ...
+    set_fact:
+      bash_environment_updated: '{{ bash_environment_status.before != bash_environment_status.after }}'
+
+  - name: Setting the local core filemode ...
+    git_config:
+      name: core.filemode
+      repo: "{{ bash_environment.dir }}"
+      scope: local
+      value: "false"
+    when: bash_environment_updated == true
+
+  # block executed when bash-environment does not exist, or is a git workspace.
+  when: (bash_environment_dir.stat.exists == false) or (bash_environment_repo.stat.exists == true)
 
 - name: Making install.sh executable ...
   file:
-    path: "{{ bash_environment.dest }}/install.sh"
+    path: "{{ bash_environment.dir }}/install.sh"
     state: file
     mode: u+x
-  when: bash_environment_status.before != bash_environment_status.after
 
 - name: Installing the environment ...
-  shell: "{{ bash_environment.dest }}/install.sh"
-  when: bash_environment_status.before != bash_environment_status.after
+  shell: "{{ bash_environment.dir }}/install.sh"

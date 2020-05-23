@@ -125,8 +125,8 @@ ROOT_UID=0
 ROOT_GID=0
 
 # Command-line switch variables.
-verbose=no
 playbook_name=
+verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
 ARGS=$(getopt -o hv -l help,verbose,version -n ${script_name} -- "${@}")
@@ -176,6 +176,9 @@ echo_color ${cyan} "Script: '${script_path}', playbook: '${playbook_name}'"
 echo_color ${cyan} "Current user: '$(whoami)', home: '${HOME}'"
 echo_color ${cyan} "Current directory: '$(pwd)'"
 
+# Make installations non-interactive.
+export DEBIAN_FRONTEND=noninteractive
+
 # Create /opt if it is missing.
 create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
 
@@ -189,29 +192,11 @@ echo_color ${cyan} "Installing or updating software-properties-common ..."
 retry_if_fail sudo apt-get install --yes software-properties-common
 
 echo_color ${cyan} "Installing or updating git ..."
-retry_if_fail sudo apt install --yes git
+retry_if_fail sudo apt-get install --yes git
 
 # Create the provisioning assets directory.
 assets_dir=${HOME}/.dev-sys
 create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
-
-# Create the git provisioning directory.
-# This is where git-related files will be stored.
-git_assets_dir=${assets_dir}/git
-create_dir_with_mode ${ASSET_DIR_MODE} ${git_assets_dir}
-
-# Install the git configuration script.
-git_vars_script=${git_assets_dir}/git-vars.sh
-git_ssh_private_key_file=${git_assets_dir}/id_git
-echo_color ${cyan} "Creating ${git_vars_script} ..."
-cat << EOF > ${git_vars_script}
-#!/usr/bin/env bash
-[ -f "${git_ssh_private_key_file}" ] && export GIT_SSH_COMMAND='ssh -i ${git_ssh_private_key_file}'
-EOF
-chmod ${ASSET_SCRIPT_MODE} ${git_vars_script}
-
-echo_color ${cyan} "Sourcing ${git_vars_script} ..."
-source ${git_vars_script}
 
 # Install or update pyenv.
 # Using pyenv will reduce the risk of corrupting the system Python.
@@ -271,24 +256,23 @@ echo_color ${cyan} "Setting ${assets_dir} to use the dev-sys Python virtual envi
 cd ${assets_dir}
 pyenv local dev-sys
 
+export ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
+ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
+if [ -f ${ansible_dev_sys_dir_script} ]; then
+	echo_color ${cyan} "Sourcing ${ansible_dev_sys_dir_script} ..."
+	source ${ansible_dev_sys_dir_script}
+fi
+
 # Clone or update ansible-dev-sys.
 ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-ansible_dev_sys_dir=${assets_dir}/ansible-dev-sys
-if [ ! -d ${ansible_dev_sys_dir} ]; then
-	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ansible_dev_sys_dir} ..."
-	retry_if_fail git clone ${ansible_dev_sys_url} ${ansible_dev_sys_dir} || exit 1
-	cd ${ansible_dev_sys_dir}
+if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
+	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
+	retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
+	cd ${ANSIBLE_DEV_SYS_DIR}
 	git config core.filemode false
-	ansible_dev_sys_script=${git_assets_dir}/ansible-dev-sys.sh
-	if [ -f ${ansible_dev_sys_script} ]; then
-		echo_color ${cyan} "Sourcing ${ansible_dev_sys_script} ..."
-		source ${ansible_dev_sys_script}
-		echo_color ${cyan} "Changing to branch ${DEV_SYS_ANSIBLE_DEV_SYS_BRANCH} ..."
-		git checkout ${DEV_SYS_ANSIBLE_DEV_SYS_BRANCH}
-	fi
-else
-	cd ${ansible_dev_sys_dir}
-	echo_color ${cyan} "Updating ${ansible_dev_sys_dir} ..."
+elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
+	cd ${ANSIBLE_DEV_SYS_DIR}
+	echo_color ${cyan} "Updating ${ANSIBLE_DEV_SYS_DIR} ..."
 	retry_if_fail git pull
 fi
 
@@ -328,12 +312,12 @@ EOF
 chmod ${ASSET_SCRIPT_MODE} ${merge_vars_action_plugin}
 
 # Create the SSH keys used to run commands as the dev-sys user.
-dev_sys_ssh_key_comment=id_dev-sys
-dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_comment}
+dev_sys_ssh_key_basename=id_dev-sys
+dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_basename}
 dev_sys_ssh_public_key_file=${dev_sys_ssh_private_key_file}.pub
 if [ ! -f ${dev_sys_ssh_private_key_file} ]; then
 	echo_color ${cyan} "Creating new SSH keys for dev-sys use ..."
-	ssh-keygen -C ${dev_sys_ssh_key_comment} -f ${dev_sys_ssh_private_key_file} -N ""
+	ssh-keygen -C ${dev_sys_ssh_key_basename} -f ${dev_sys_ssh_private_key_file} -N ""
 	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_private_key_file}
 	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_public_key_file}
 fi
@@ -375,18 +359,19 @@ cat << EOF > ${ansible_group_vars_file}
 EOF
 chmod ${ASSET_FILE_MODE} ${ansible_group_vars_file}
 
+export BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
+bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
+if [ -f ${bash_environment_dir_script} ]; then
+	echo_color ${cyan} "Sourcing ${bash_environment_dir_script} ..."
+	source ${bash_environment_dir_script}
+fi
+
 # Add the bash-environment variables to the Ansible group variables.
 echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
 cat << EOF >> ${ansible_group_vars_file}
 bash_environment:
-  dest: ~/.dev-sys/bash-environment
+  dir: ${BASH_ENVIRONMENT_DIR}
 EOF
-bash_environment_script=${git_assets_dir}/bash-environment.sh
-if [ -f ${bash_environment_script} ]; then
-	echo_color ${cyan} "Sourcing ${bash_environment_script} ..."
-	source ${bash_environment_script}
-	echo "  version: ${DEV_SYS_BASH_ENVIRONMENT_BRANCH}" >> ${ansible_group_vars_file}
-fi
 
 # Create the Ansible inventory file.
 ansible_inventory_file=${ansible_inventories_dir}/inventory.ini
@@ -405,7 +390,7 @@ cat << EOF > ${ansible_config_file}
 action_plugins = ${ansible_action_plugins_dir}
 force_color = True
 inventory = ${ansible_inventory_file}
-roles_path = ${ansible_dev_sys_dir}/ansible/roles
+roles_path = ${ANSIBLE_DEV_SYS_DIR}/ansible/roles
 EOF
 chmod ${ASSET_FILE_MODE} ${ansible_config_file}
 
@@ -421,12 +406,12 @@ chmod ${ASSET_FILE_MODE} ${ansible_vars_script}
 echo_color ${cyan} "Sourcing ${ansible_vars_script} ..."
 source ${ansible_vars_script}
 
-ansible_playbook_dir=${ansible_dev_sys_dir}/ansible
+ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
 ansible_play_script=${ansible_assets_dir}/ansible-play.sh
 echo_color ${cyan} "Creating ${ansible_play_script} ..."
 cat << EOF > ${ansible_play_script}
 #!/usr/bin/env bash
-ansible_playbook_dir=${ansible_dev_sys_dir}/ansible
+ansible_playbook_dir=${ansible_playbook_dir}
 EOF
 cat << 'EOF' >> ${ansible_play_script}
 ansible-playbook ${ansible_playbook_dir}/${1}.yml || exit 1

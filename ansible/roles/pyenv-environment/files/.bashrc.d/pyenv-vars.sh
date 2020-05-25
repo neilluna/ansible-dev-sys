@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-source ~/.dev-sys/pyenv/pyenv-vars.sh
+[ -f ~/.dev-sys/pyenv/pyenv-vars.sh ] && source ~/.dev-sys/pyenv/pyenv-vars.sh

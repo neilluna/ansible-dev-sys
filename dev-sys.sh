@@ -238,7 +238,6 @@ if [ -z "${PYENV_ROOT}" ]; then
 	${pyenv_installer_script}
 
 	# Create or update the pyenv script for bash-environment.
-	# To do: Make sure the pyenv-environment role scriptlet tests before ot calls.
 	pyenv_vars_script=${pyenv_assets_dir}/pyenv-vars.sh
 	echo_color ${cyan} "Creating ${pyenv_vars_script} ..."
 	cat <<-EOF > ${pyenv_vars_script}
@@ -260,7 +259,7 @@ else
 fi
 
 # Install an isolated instance of Python for use by the dev-sys tools and Ansible.
-python_version=3.8.0
+python_version=3.8.3
 if [ -z "$(pyenv versions | awk -v pyver=${python_version} '/^\*?\s+/ && ($1 == "*" ? $2 : $1) == pyver')" ]; then
 	echo_color ${cyan} "Installing Python ${python_version} for the dev-sys Python virtual environment ..."
 	retry_if_fail pyenv install ${python_version} || exit 1
@@ -297,6 +296,7 @@ elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
 fi
 
 # Install or update Ansible.
+# To do: What if Ansible is already installed on the system?
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
 	echo_color ${cyan} "Installing Ansible ..."
 	retry_if_fail pip install ansible --disable-pip-version-check

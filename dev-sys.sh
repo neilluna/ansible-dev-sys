@@ -236,27 +236,28 @@ if [ -z "${PYENV_ROOT}" ]; then
 
 	echo_color ${cyan} "Installing pyenv ..."
 	${pyenv_installer_script}
+
+	# Create or update the pyenv script for bash-environment.
+	# To do: Make sure the pyenv-environment role scriptlet tests before ot calls.
+	pyenv_vars_script=${pyenv_assets_dir}/pyenv-vars.sh
+	echo_color ${cyan} "Creating ${pyenv_vars_script} ..."
+	cat <<-EOF > ${pyenv_vars_script}
+	#!/usr/bin/env bash
+	export PYENV_ROOT="${PYENV_ROOT}"
+	EOF
+	cat <<-'EOF' >> ${pyenv_vars_script}
+	PATH="${PYENV_ROOT}/bin:${PATH}"
+	eval "$(pyenv init -)"
+	eval "$(pyenv virtualenv-init -)"
+	EOF
+	chmod ${ASSET_SCRIPT_MODE} ${pyenv_vars_script}
+
+	echo_color ${cyan} "Sourcing ${pyenv_vars_script} ..."
+	source ${pyenv_vars_script}
 else
 	echo_color ${cyan} "Updating pyenv ..."
 	retry_if_fail pyenv update
 fi
-
-# Create or update the pyenv shell profile scriptlet.
-pyenv_vars_script=${pyenv_assets_dir}/pyenv-vars.sh
-echo_color ${cyan} "Creating ${pyenv_vars_script} ..."
-cat << EOF > ${pyenv_vars_script}
-#!/usr/bin/env bash
-export PYENV_ROOT="${PYENV_ROOT}"
-EOF
-cat << 'EOF' >> ${pyenv_vars_script}
-PATH="${PYENV_ROOT}/bin:${PATH}"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-EOF
-chmod ${ASSET_SCRIPT_MODE} ${pyenv_vars_script}
-
-echo_color ${cyan} "Sourcing ${pyenv_vars_script} ..."
-source ${pyenv_vars_script}
 
 # Install an isolated instance of Python for use by the dev-sys tools and Ansible.
 python_version=3.8.0
@@ -287,6 +288,8 @@ if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 	retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
 	cd ${ANSIBLE_DEV_SYS_DIR}
 	git config core.filemode false
+
+# Only update if ansible-dev-sys is a git workspace.
 elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
 	cd ${ANSIBLE_DEV_SYS_DIR}
 	echo_color ${cyan} "Updating ${ANSIBLE_DEV_SYS_DIR} ..."

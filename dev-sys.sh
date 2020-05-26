@@ -216,6 +216,37 @@ if [ ! -f ${dev_sys_script} ]; then
 	chmod ${ASSET_SCRIPT_MODE} ${dev_sys_script}
 fi
 
+# Determine where ansible-dev-sys currently, or will, reside.
+ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
+ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
+if [ -f ${ansible_dev_sys_dir_script} ]; then
+	echo_color ${cyan} "Sourcing ${ansible_dev_sys_dir_script} ..."
+	source ${ansible_dev_sys_dir_script}
+fi
+
+# Clone or update ansible-dev-sys.
+ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
+if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
+	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
+	retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
+	cd ${ANSIBLE_DEV_SYS_DIR}
+	git config core.filemode false
+
+# Only update if ansible-dev-sys is a git workspace.
+elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
+	cd ${ANSIBLE_DEV_SYS_DIR}
+	echo_color ${cyan} "Updating ${ANSIBLE_DEV_SYS_DIR} ..."
+	retry_if_fail git pull
+fi
+
+# Determine where bash-environment currently, or will, reside.
+BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
+bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
+if [ -f ${bash_environment_dir_script} ]; then
+	echo_color ${cyan} "Sourcing ${bash_environment_dir_script} ..."
+	source ${bash_environment_dir_script}
+fi
+
 # Install or update pyenv.
 # Using pyenv will reduce the risk of corrupting the system Python.
 pyenv_assets_dir=${assets_dir}/pyenv
@@ -272,28 +303,6 @@ if [ -z "$(pyenv versions | awk '/^\*?\s+/ && ($1 == "*" ? $2 : $1) == "dev-sys"
 fi
 echo_color ${cyan} "Setting PYENV_VERSION to use the dev-sys Python virtual environment ..."
 export PYENV_VERSION=dev-sys 
-
-ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
-ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
-if [ -f ${ansible_dev_sys_dir_script} ]; then
-	echo_color ${cyan} "Sourcing ${ansible_dev_sys_dir_script} ..."
-	source ${ansible_dev_sys_dir_script}
-fi
-
-# Clone or update ansible-dev-sys.
-ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
-	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
-	retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
-	cd ${ANSIBLE_DEV_SYS_DIR}
-	git config core.filemode false
-
-# Only update if ansible-dev-sys is a git workspace.
-elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
-	cd ${ANSIBLE_DEV_SYS_DIR}
-	echo_color ${cyan} "Updating ${ANSIBLE_DEV_SYS_DIR} ..."
-	retry_if_fail git pull
-fi
 
 # Install or update Ansible.
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
@@ -377,14 +386,7 @@ cat << EOF > ${ansible_group_vars_file}
 EOF
 chmod ${ASSET_FILE_MODE} ${ansible_group_vars_file}
 
-BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
-bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
-if [ -f ${bash_environment_dir_script} ]; then
-	echo_color ${cyan} "Sourcing ${bash_environment_dir_script} ..."
-	source ${bash_environment_dir_script}
-fi
-
-# Determine the Ansible bash-environment role needs to force an install.
+# Determine if the Ansible bash-environment role needs to force an install.
 bash_environment_force_install=false
 # If bash-environment exists and does not have a git repository, then track changes to it via hashes.
 if [ -d ${BASH_ENVIRONMENT_DIR} -a ! -d ${BASH_ENVIRONMENT_DIR}/.git ]; then

@@ -296,7 +296,6 @@ elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
 fi
 
 # Install or update Ansible.
-# To do: What if Ansible is already installed on the system?
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
 	echo_color ${cyan} "Installing Ansible ..."
 	retry_if_fail pip install ansible --disable-pip-version-check

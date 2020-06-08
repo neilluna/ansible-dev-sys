@@ -3,6 +3,7 @@
   git:
     repo: https://github.com/neilluna/bash-environment.git
     dir: "{{ bash_environment.dir }}"
+    version: "{{ bash_environment.version }}"
   register: bash_environment_git_status
 
 - name: Installing ...

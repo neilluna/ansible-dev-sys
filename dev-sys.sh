@@ -233,6 +233,9 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
 		retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
 		cd ${ANSIBLE_DEV_SYS_DIR}
+		if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
+			git checkout ${ANSIBLE_DEV_SYS_VERSION}
+		fi
 		git config core.filemode false
 	else
 		cd ${ANSIBLE_DEV_SYS_DIR}
@@ -433,6 +436,9 @@ bash_environment:
   managed_externally: ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY}
   run_install: ${bash_environment_run_install}
 EOF
+if [ ! -z "${BASH_ENVIRONMENT_VERSION}" ]; then
+	echo "  version: '${BASH_ENVIRONMENT_VERSION}'" >> ${ansible_group_vars_file}
+fi
 
 # Add the docker variables to the Ansible group variables.
 echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."

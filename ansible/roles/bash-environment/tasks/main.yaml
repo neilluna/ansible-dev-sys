@@ -1,7 +1,7 @@
 ---
 - name: Preparing to merge variables ...
   set_fact:
-    default_var__to_merge: '{{ bash_environment_defaults }}'
+    default_var__to_merge: '{{ bash_environment_defaults | default({}) }}'
     new_var__to_merge: '{{ bash_environment | default({}) }}'
 
 - name: Merging the variables ...
@@ -14,49 +14,22 @@
 - name: Saving the merged variable ...
   set_fact:
     bash_environment: '{{ merged_var }}'
-    bash_environment_updated: false
 
-- name: Checking if bash-environment is already installed ...
-  stat:
-    path: '{{ bash_environment.dir }}'
-  register: bash_environment_dir
+- name: If not managed externally ...
+  import_tasks: tasks/managed_here.yaml
+  when: bash_environment.managed_externally == false
 
-- name: Checking if bash-environment has a git repository ...
-  stat:
-    path: '{{ bash_environment.dir }}/.git'
-  register: bash_environment_repo
-
-- name: Cloning or updating ...
-  when: (bash_environment_dir.stat.exists == false) or (bash_environment_repo.stat.exists == true)
+- name: Installing ...
+  when: bash_environment.run_install == true
   block:
 
-  - name: Cloning or updating the git workspace repository ...
-    git:
-      repo: "{{ bash_environment.repo }}"
-      dir: "{{ bash_environment.dir }}"
-    register: bash_environment_status
+  - name: Making install.sh executable ...
+    file:
+      path: "{{ bash_environment.dir }}/install.sh"
+      state: file
+      mode: u+x
 
-  - name: Flagging a clone or update ...
-    when: bash_environment_status.before != bash_environment_status.after
-    set_fact:
-      bash_environment_updated: true
+  - name: Installing the environment ...
+    shell: "{{ bash_environment.dir }}/install.sh"
 
-  - name: Setting the local core filemode ...
-    when: bash_environment_updated == true
-    git_config:
-      name: core.filemode
-      repo: "{{ bash_environment.dir }}"
-      scope: local
-      value: "false"
-
-  # End of block: name: Cloning or updating ...
-
-- name: Making install.sh executable ...
-  file:
-    path: "{{ bash_environment.dir }}/install.sh"
-    state: file
-    mode: u+x
-
-- name: Installing the environment ...
-  when: (bash_environment_updated == true) or (bash_environment.force_install == true)
-  shell: "{{ bash_environment.dir }}/install.sh"
+  # End of block: name: Installing ...

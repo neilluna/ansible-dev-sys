@@ -1,0 +1,23 @@
+---
+- name: Cloning or updating the git workspace repository ...
+  git:
+    repo: https://github.com/neilluna/bash-environment.git
+    dir: "{{ bash_environment.dir }}"
+  register: bash_environment_git_status
+
+- name: Installing ...
+  when: bash_environment_git_status.before != bash_environment_git_status.after
+  block:
+
+  - name: Setting the local core filemode ...
+    git_config:
+      name: core.filemode
+      repo: "{{ bash_environment.dir }}"
+      scope: local
+      value: "false"
+
+  - name: Forcing an install ...
+    set_fact:
+      bash_environment.managed_externally: true
+
+  # End of block: name: Installing ...

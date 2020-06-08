@@ -42,7 +42,7 @@ function echo_color()
 }
 
 # Create a directory, if it does not exist.
-# If created, set the mode of the new directory.
+# If created, then set the mode of the new directory.
 # Usage: create_dir_with_mode mode dir
 function create_dir_with_mode()
 {
@@ -55,7 +55,7 @@ function create_dir_with_mode()
 }
 
 # Create a directory, if it does not exist.
-# If created, set the mode, user, and group of the new directory.
+# If created, then set the mode, user, and group of the new directory.
 # Usage: create_dir_with_mode_user_group mode user group dir
 function create_dir_with_mode_user_group()
 {
@@ -201,7 +201,7 @@ retry_if_fail sudo apt-get install --yes git
 assets_dir=${HOME}/.dev-sys
 create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
 
-# If needed, create a dev-sys.sh proxy script.
+# If needed, then create a proxy to this script.
 dev_sys_script=${assets_dir}/dev-sys.sh
 if [ ! -f ${dev_sys_script} ]; then
 	echo_color ${cyan} "Creating ${dev_sys_script} ..."
@@ -216,35 +216,39 @@ if [ ! -f ${dev_sys_script} ]; then
 	chmod ${ASSET_SCRIPT_MODE} ${dev_sys_script}
 fi
 
-# Determine where ansible-dev-sys currently, or will, reside.
+# ansible-dev-sys: Where is it, and is it being managed by an external process?
+# If ansible-dev-sys is being managed by an external process, then this script will not update it.
 ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
-ansible_dev_sys_dir_script=${assets_dir}/ansible-dev-sys-dir.sh
-if [ -f ${ansible_dev_sys_dir_script} ]; then
-	echo_color ${cyan} "Sourcing ${ansible_dev_sys_dir_script} ..."
-	source ${ansible_dev_sys_dir_script}
+ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY=false
+ansible_dev_sys_vars_script=${assets_dir}/ansible-dev-sys-vars.sh
+if [ -f ${ansible_dev_sys_vars_script} ]; then
+	echo_color ${cyan} "Sourcing ${ansible_dev_sys_vars_script} ..."
+	source ${ansible_dev_sys_vars_script}
 fi
 
-# Clone or update ansible-dev-sys.
-ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
-	echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
-	retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
-	cd ${ANSIBLE_DEV_SYS_DIR}
-	git config core.filemode false
-
-# Only update if ansible-dev-sys is a git workspace.
-elif [ -d ${ANSIBLE_DEV_SYS_DIR}/.git ]; then
-	cd ${ANSIBLE_DEV_SYS_DIR}
-	echo_color ${cyan} "Updating ${ANSIBLE_DEV_SYS_DIR} ..."
-	retry_if_fail git pull
+# If ansible-dev-sys is being managed by this script (not externally), then clone or update it.
+if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
+	if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
+		ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
+		echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
+		retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
+		cd ${ANSIBLE_DEV_SYS_DIR}
+		git config core.filemode false
+	else
+		cd ${ANSIBLE_DEV_SYS_DIR}
+		echo_color ${cyan} "Updating ${ANSIBLE_DEV_SYS_DIR} ..."
+		retry_if_fail git pull
+	fi
 fi
 
-# Determine where bash-environment currently, or will, reside.
+# bash-environment: Where is it, and is it being managed by an external process?
+# If bash-environment is being managed externally, then the Ansible bash-environment role will not update it.
 BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
-bash_environment_dir_script=${assets_dir}/bash-environment-dir.sh
-if [ -f ${bash_environment_dir_script} ]; then
-	echo_color ${cyan} "Sourcing ${bash_environment_dir_script} ..."
-	source ${bash_environment_dir_script}
+BASH_ENVIRONMENT_MANAGED_EXTERNALLY=false
+bash_environment_vars_script=${assets_dir}/bash-environment-vars.sh
+if [ -f ${bash_environment_vars_script} ]; then
+	echo_color ${cyan} "Sourcing ${bash_environment_vars_script} ..."
+	source ${bash_environment_vars_script}
 fi
 
 # Install or update pyenv.
@@ -301,10 +305,12 @@ if [ -z "$(pyenv versions | awk '/^\*?\s+/ && ($1 == "*" ? $2 : $1) == "dev-sys"
 	echo_color ${cyan} "Creating the dev-sys Python virtual environment ..."
 	pyenv virtualenv ${python_version} dev-sys
 fi
-echo_color ${cyan} "Setting PYENV_VERSION to use the dev-sys Python virtual environment ..."
-export PYENV_VERSION=dev-sys 
+echo_color ${cyan} "Setting ${assets_dir} to use the dev-sys Python virtual environment ..."
+cd ${assets_dir}
+pyenv local dev-sys 
 
 # Install or update Ansible.
+cd ${assets_dir}
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
 	echo_color ${cyan} "Installing Ansible ..."
 	retry_if_fail pip install ansible --disable-pip-version-check
@@ -324,6 +330,7 @@ ansible_action_plugins_dir=${ansible_assets_dir}/action_plugins
 create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_action_plugins_dir}
 
 # Install or update, and configure the ansible-merge-vars plugin.
+cd ${assets_dir}
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible-merge-vars"')" ]; then
 	echo_color ${cyan} "Installing ansible_merge_vars ..."
 	retry_if_fail pip install ansible_merge_vars --disable-pip-version-check
@@ -386,10 +393,14 @@ cat << EOF > ${ansible_group_vars_file}
 EOF
 chmod ${ASSET_FILE_MODE} ${ansible_group_vars_file}
 
-# Determine if the Ansible bash-environment role needs to force an install.
-bash_environment_force_install=false
-# If bash-environment exists and does not have a git repository, then track changes to it via hashes.
-if [ -d ${BASH_ENVIRONMENT_DIR} -a ! -d ${BASH_ENVIRONMENT_DIR}/.git ]; then
+# Determine if the Ansible bash-environment role needs to run its "install" script.
+# The "install" script only needs to be is run if bash-environment changes.
+# If bash-environment is being managed by this script (not externally),
+#   then the Ansible bash-environment role will detect changes to bash-environment. Nothing is done here.
+# If bash-environment is being managed externally,
+#   then changes to bash-environment are detected with hashes of the directory's contents. That is done here.
+bash_environment_run_install=false
+if [ ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY} == true ]; then
 	cd ${BASH_ENVIRONMENT_DIR}
 	echo_color ${cyan} "Computing the hash of ${BASH_ENVIRONMENT_DIR} ..."
 	bash_environment_hash=$(find . -type f | sort | xargs sha1sum | sha1sum | awk '{ print $1}')
@@ -399,10 +410,10 @@ if [ -d ${BASH_ENVIRONMENT_DIR} -a ! -d ${BASH_ENVIRONMENT_DIR}/.git ]; then
 		echo_color ${cyan} "Sourcing ${bash_environment_previous_hash_script} ..."
 		source ${bash_environment_previous_hash_script}
 		if [ "${bash_environment_hash}" != "${bash_environment_previous_hash}" ]; then
-			bash_environment_force_install=true
+			bash_environment_run_install=true
 		fi
 	else
-		bash_environment_force_install=true
+		bash_environment_run_install=true
 	fi
 
 	echo_color ${cyan} "Creating ${bash_environment_previous_hash_script} ..."
@@ -412,14 +423,15 @@ if [ -d ${BASH_ENVIRONMENT_DIR} -a ! -d ${BASH_ENVIRONMENT_DIR}/.git ]; then
 	EOF
 	chmod ${ASSET_SCRIPT_MODE} ${bash_environment_previous_hash_script}
 fi
-echo_color ${cyan} "bash-environment force install = ${bash_environment_force_install}"
+echo_color ${cyan} "bash_environment_run_install = ${bash_environment_run_install}"
 
 # Add the bash-environment variables to the Ansible group variables.
 echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
 cat << EOF >> ${ansible_group_vars_file}
 bash_environment:
   dir: ${BASH_ENVIRONMENT_DIR}
-  force_install: ${bash_environment_force_install}
+  managed_externally: ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY}
+  run_install: ${bash_environment_run_install}
 EOF
 
 # Add the docker variables to the Ansible group variables.
@@ -454,6 +466,7 @@ export ANSIBLE_CONFIG=${ansible_config_file}
 
 ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
 echo_color ${cyan} "Running Ansible playbook '${playbook_name}' ..."
+cd ${assets_dir}
 ansible-playbook ${ansible_playbook_dir}/${playbook_name}.yml || exit 1
 
 exit 0

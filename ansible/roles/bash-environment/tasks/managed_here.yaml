@@ -6,8 +6,12 @@
     version: "{{ bash_environment.version }}"
   register: bash_environment_git_status
 
+- name: Checking if a change occurred ...
+  set_fact:
+    run_install: '{{ bash_environment_git_status.before != bash_environment_git_status.after }}'
+
 - name: Installing or updating ...
-  when: bash_environment_git_status.before != bash_environment_git_status.after
+  when: run_install == true
   block:
 
   - name: Setting the local core filemode ...
@@ -17,8 +21,4 @@
       scope: local
       value: "false"
 
-  - name: Forcing an install ...
-    set_fact:
-      bash_environment.managed_externally: true
-
-  # End of block: name: Installing ...
+  # End of block: name: name: Installing or updating ...

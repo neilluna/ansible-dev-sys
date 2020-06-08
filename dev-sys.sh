@@ -441,7 +441,7 @@ if [ ! -z "${BASH_ENVIRONMENT_VERSION}" ]; then
 fi
 
 # Add the docker variables to the Ansible group variables.
-echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
+echo_color ${cyan} "Adding the docker variables to ${ansible_group_vars_file} ..."
 cat << EOF >> ${ansible_group_vars_file}
 docker:
   users:

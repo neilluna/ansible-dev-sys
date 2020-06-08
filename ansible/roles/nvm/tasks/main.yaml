@@ -1,5 +1,5 @@
 ---
-- name: Deploying from the repository ...
+- name: Cloning or updating the repository ...
   git:
     repo: https://github.com/nvm-sh/nvm.git
     dest: ~/.nvm

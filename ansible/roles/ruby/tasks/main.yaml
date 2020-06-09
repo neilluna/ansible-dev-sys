@@ -1,0 +1,7 @@
+---
+- name: Installing ...
+  apt:
+    name: ruby-full
+    force_apt_get: yes
+    state: latest
+  become: yes

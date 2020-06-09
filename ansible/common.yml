@@ -1,0 +1,11 @@
+---
+- hosts: dev_sys
+  roles:
+  - role: update
+  - role: upgrade
+  - role: git
+  - role: bash-environment
+  - role: pyenv-environment
+  - role: dev-sys
+  - role: unzip
+  - role: zip

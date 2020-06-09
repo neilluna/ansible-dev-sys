@@ -1,0 +1,7 @@
+---
+- name: Installing ...
+  apt:
+    name: zip
+    force_apt_get: yes
+    state: latest
+  become: yes

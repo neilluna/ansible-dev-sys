@@ -1,0 +1,14 @@
+---
+- name: Installing ...
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - virtualenv
+    - virtualenvwrapper
+  become: yes
+
+- name: Installing the environment ...
+  shell: ~/provisioning/bash-environment/install.sh --python3-virtualenv
+  when: bash_environment_status.before != bash_environment_status.after

@@ -1,0 +1,6 @@
+---
+- name: Running apt update ...
+  apt:
+    force_apt_get: yes
+    update_cache: yes
+  become: yes

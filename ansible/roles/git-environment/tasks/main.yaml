@@ -1,0 +1,6 @@
+---
+- name: Installing the environment ...
+  copy:
+    src: .bashrc.d/git-vars.sh
+    dest: ~/.bashrc.d/git-vars.sh
+    mode: u+x

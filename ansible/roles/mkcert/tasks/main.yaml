@@ -1,0 +1,18 @@
+---
+- name: Installing dependencies ...
+  apt:
+    name: libnss3-tools
+    force_apt_get: yes
+    state: latest
+  become: yes
+
+- name: Installing or updating ...
+  homebrew:
+    name: mkcert
+  environment:
+    HOMEBREW_CELLAR: /home/linuxbrew/.linuxbrew/Cellar
+    HOMEBREW_PREFIX: /home/linuxbrew/.linuxbrew
+    HOMEBREW_REPOSITORY: /home/linuxbrew/.linuxbrew/Homebrew
+    INFOPATH: /home/linuxbrew/.linuxbrew/share/info
+    MANPATH: /home/linuxbrew/.linuxbrew/share/man
+    PATH: "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:{{ ansible_env.PATH }}"

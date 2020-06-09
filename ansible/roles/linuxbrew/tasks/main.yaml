@@ -1,0 +1,44 @@
+---
+- name: Checking if linuxbrew is already installed ...
+  stat:
+    path: /home/linuxbrew/.linuxbrew/bin/brew
+  register: linuxbrew_executable
+
+- name: Downloading and installing ...
+  when: linuxbrew_executable.stat.exists == false
+  block:
+
+  - name: Creating the linuxbrew assets directory ...
+    file:
+      path: ~/.dev-sys/linuxbrew
+      mode: u+rwx,go-rwx
+      state: directory
+
+  - name: Downloading installation ...
+    get_url:
+      url: https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh
+      dest: ~/.dev-sys/linuxbrew/linuxbrew_install.sh
+      mode: u+rwx,go-rwx
+
+  - name: Installing ...
+    shell: ~/.dev-sys/linuxbrew/linuxbrew_install.sh < /dev/null
+
+  # End of block: name: Downloading and installing ...
+
+- name: Updating ...
+  when: linuxbrew_executable.stat.exists == true
+  homebrew:
+    update_homebrew: yes
+  environment:
+    HOMEBREW_CELLAR: /home/linuxbrew/.linuxbrew/Cellar
+    HOMEBREW_PREFIX: /home/linuxbrew/.linuxbrew
+    HOMEBREW_REPOSITORY: /home/linuxbrew/.linuxbrew/Homebrew
+    INFOPATH: /home/linuxbrew/.linuxbrew/share/info
+    MANPATH: /home/linuxbrew/.linuxbrew/share/man
+    PATH: "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:{{ ansible_env.PATH }}"
+
+- name: Installing the environment ...
+  copy:
+    src: .bashrc.d/linuxbrew-vars.sh
+    dest: ~/.bashrc.d/linuxbrew-vars.sh
+    mode: u+x

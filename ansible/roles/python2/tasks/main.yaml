@@ -1,0 +1,10 @@
+---
+- name: Installing ...
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - python-minimal
+    - python-pip
+  become: yes

@@ -1,0 +1,16 @@
+---
+- name: Creating the virtual environment ...
+  command: virtualenv ~/.virtualenvs/aws-dev -p python3
+  args:
+    creates: ~/.virtualenvs/aws-dev
+
+- name: Installing ...
+  pip:
+    name: "{{ packages }}"
+    state: latest
+    virtualenv: ~/.virtualenvs/aws-dev
+  vars:
+    packages:
+    - awscli
+    - boto3
+    - sceptre

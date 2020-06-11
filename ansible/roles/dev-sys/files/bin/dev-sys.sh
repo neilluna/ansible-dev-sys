@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-~/.dev-sys/dev-sys.sh "${@}"
-exit ${?}
+exec $(which bash) ~/.dev-sys/dev-sys-proxy.sh "${@}"

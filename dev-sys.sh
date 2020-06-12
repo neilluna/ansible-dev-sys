@@ -274,7 +274,7 @@ cat << EOF > ${dev_sys_proxy_script}
 dev_sys_script=${script_path}
 EOF
 cat << 'EOF' >> ${dev_sys_proxy_script}
-exec $(which bash) -c '${dev_sys_script} "${@}"'
+exec $(which bash) -c "${dev_sys_script} ${@}"
 EOF
 chmod ${ASSET_SCRIPT_MODE} ${dev_sys_proxy_script}
 

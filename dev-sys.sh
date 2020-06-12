@@ -240,15 +240,22 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		cat <<-EOF > ${ansible_dev_sys_update_script}
 		#!/usr/bin/env bash
 		cd ${assets_dir}
+		EOF
 		if [ -d ${ANSIBLE_DEV_SYS_DIR} ]; then
+			cat <<-EOF >> ${dev_sys_proxy_script}
 			echo -e "'\e[36m'Removing ${ANSIBLE_DEV_SYS_DIR} ...'\e[0m'"
 			rm -rf ${ANSIBLE_DEV_SYS_DIR} || exit 1
+			EOF
 		fi
+		cat <<-EOF >> ${dev_sys_proxy_script}
 		echo -e "\e[36mMoving ${new_ansible_dev_sys_dir} to ${ANSIBLE_DEV_SYS_DIR} ...\e[0m"
 		mv ${new_ansible_dev_sys_dir} ${ANSIBLE_DEV_SYS_DIR} || exit 1
 		dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
+		playbook_name=${playbook_name}
+		EOF
+		cat <<-'EOF' >> ${dev_sys_proxy_script}
 		echo -e "\e[36mExecuting ${dev_sys_script} ...\e[0m"
-		exec $(which bash) -c '${dev_sys_script} --execed-from-update ${playbook_name}'
+		exec $(which bash) -c "${dev_sys_script} --execed-from-update ${playbook_name}"
 		EOF
 		chmod ${ASSET_SCRIPT_MODE} ${ansible_dev_sys_update_script}
 		echo_color ${cyan} "Executing ${ansible_dev_sys_update_script} ..."

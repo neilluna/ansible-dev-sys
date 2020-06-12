@@ -249,7 +249,7 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		echo_color ${cyan} "Creating ${ansible_dev_sys_update_script} ..."
 		cat <<-EOF > ${ansible_dev_sys_update_script}
 		#!/usr/bin/env bash
-		cd ${assets_dir}
+		cd ${HOME}
 		EOF
 		if [ -d ${ANSIBLE_DEV_SYS_DIR} ]; then
 			cat <<-EOF >> ${ansible_dev_sys_update_script}

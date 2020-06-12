@@ -125,11 +125,13 @@ ROOT_UID=0
 ROOT_GID=0
 
 # Command-line switch variables.
+from_vagrant=no
+from_update=no
 playbook_name=
 verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
-ARGS=$(getopt -o hv -l help,verbose,version -n ${script_name} -- "${@}")
+ARGS=$(getopt -o hv -l from-vagrant,from-update,help,verbose,version -n ${script_name} -- "${@}")
 if [ ${?} != 0 ]; then
 	exit 1
 fi
@@ -140,6 +142,14 @@ eval set -- "${ARGS}"
 # Parse the command line arguments.
 while true; do
 	case "${1}" in
+		--from-vagrant)
+			from_vagrant=yes
+			shift
+			;;
+		--from-update)
+			from_update=yes
+			shift
+			;;
 		-h | --help)
 			echo_usage
 			exit 0
@@ -182,38 +192,28 @@ export DEBIAN_FRONTEND=noninteractive
 # Do not buffer Python stdout.
 export PYTHONUNBUFFERED=TRUE
 
-# Create /opt if it is missing.
-create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
-
-echo_color ${cyan} "Running apt-get update ..."
-retry_if_fail sudo apt-get update --yes
-
-echo_color ${cyan} "Running apt-get upgrade ..."
-retry_if_fail sudo apt-get upgrade --yes
-
-echo_color ${cyan} "Installing or updating software-properties-common ..."
-retry_if_fail sudo apt-get install --yes software-properties-common
-
-echo_color ${cyan} "Installing or updating git ..."
-retry_if_fail sudo apt-get install --yes git
-
-# Create the provisioning assets directory.
+# The provisioning assets directory.
 assets_dir=${HOME}/.dev-sys
-create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
 
-# If needed, then create a proxy to this script.
-dev_sys_script=${assets_dir}/dev-sys.sh
-if [ ! -f ${dev_sys_script} ]; then
-	echo_color ${cyan} "Creating ${dev_sys_script} ..."
-	cat <<-EOF > ${dev_sys_script}
-	#!/usr/bin/env bash
-	dev_sys_script=${script_path}
-	EOF
-	cat <<-'EOF' >> ${dev_sys_script}
-	${dev_sys_script} "${@}"
-	exit ${?}
-	EOF
-	chmod ${ASSET_SCRIPT_MODE} ${dev_sys_script}
+# No need to run these if this script was run from Vagrant or as a rerun after a dev-sys.sh update.
+if [ ${from_vagrant} == no ] && [ ${from_update} == no ]; then
+	# Create /opt if it is missing.
+	create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
+
+	echo_color ${cyan} "Running apt-get update ..."
+	retry_if_fail sudo apt-get update --yes
+
+	echo_color ${cyan} "Running apt-get upgrade ..."
+	retry_if_fail sudo apt-get upgrade --yes
+
+	echo_color ${cyan} "Installing or updating software-properties-common ..."
+	retry_if_fail sudo apt-get install --yes software-properties-common
+
+	echo_color ${cyan} "Installing or updating git ..."
+	retry_if_fail sudo apt-get install --yes git
+
+	# Create the provisioning assets directory.
+	create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
 fi
 
 # ansible-dev-sys: Where is it, and is it being managed by an external process?
@@ -226,23 +226,67 @@ if [ -f ${ansible_dev_sys_vars_script} ]; then
 	source ${ansible_dev_sys_vars_script}
 fi
 
-# If ansible-dev-sys is being managed by this script (not externally), then clone or update it.
+# If ansible-dev-sys is being managed by this script (not externally), then install or update it.
 if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
-	if [ ! -d ${ANSIBLE_DEV_SYS_DIR} ]; then
+	ansible_dev_sys_update_script=${assets_dir}/ansible-dev-sys-update.sh
+	if [ ${from_update} == no ]; then
+
+		# Clone a new copy of ansible-dev-sys.
+		new_ansible_dev_sys_dir=${assets_dir}/new-ansible-dev-sys
 		ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-		echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${ANSIBLE_DEV_SYS_DIR} ..."
-		retry_if_fail git clone ${ansible_dev_sys_url} ${ANSIBLE_DEV_SYS_DIR} || exit 1
-		cd ${ANSIBLE_DEV_SYS_DIR}
+		echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${new_ansible_dev_sys_dir} ..."
+		retry_if_fail git clone ${ansible_dev_sys_url} ${new_ansible_dev_sys_dir}
+		cd ${new_ansible_dev_sys_dir}
 		if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
+			echo_color ${cyan} "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
 			git checkout ${ANSIBLE_DEV_SYS_VERSION}
 		fi
 		git config core.filemode false
+		new_dev_sys_script=${new_ansible_dev_sys_dir}/dev-sys.sh
+		chmod ${ASSET_SCRIPT_MODE} ${new_dev_sys_script}
+
+		# Create a separate update script
+		echo_color ${cyan} "Creating ${ansible_dev_sys_update_script} ..."
+		cat <<-EOF > ${ansible_dev_sys_update_script}
+		#!/usr/bin/env bash
+		cd ${HOME}
+		EOF
+		if [ -d ${ANSIBLE_DEV_SYS_DIR} ]; then
+			cat <<-EOF >> ${ansible_dev_sys_update_script}
+			echo -e "\e[36mRemoving ${ANSIBLE_DEV_SYS_DIR} ...\e[0m"
+			rm -rf ${ANSIBLE_DEV_SYS_DIR} || exit 1
+			EOF
+		fi
+		cat <<-EOF >> ${ansible_dev_sys_update_script}
+		echo -e "\e[36mMoving ${new_ansible_dev_sys_dir} to ${ANSIBLE_DEV_SYS_DIR} ...\e[0m"
+		mv ${new_ansible_dev_sys_dir} ${ANSIBLE_DEV_SYS_DIR} || exit 1
+		dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
+		playbook_name=${playbook_name}
+		EOF
+		cat <<-'EOF' >> ${ansible_dev_sys_update_script}
+		echo -e "\e[36mExecuting ${dev_sys_script} ...\e[0m"
+		exec $(which bash) -c "${dev_sys_script} --from-update ${playbook_name}"
+		EOF
+		chmod ${ASSET_SCRIPT_MODE} ${ansible_dev_sys_update_script}
+		echo_color ${cyan} "Executing ${ansible_dev_sys_update_script} ..."
+		exec $(which bash) -c ${ansible_dev_sys_update_script}
 	else
-		cd ${ANSIBLE_DEV_SYS_DIR}
-		echo_color ${cyan} "Updating ${ANSIBLE_DEV_SYS_DIR} ..."
-		retry_if_fail git pull
+		echo_color ${cyan} "Removing ${ansible_dev_sys_update_script} ..."
+		rm -f ${ansible_dev_sys_update_script}
 	fi
 fi
+
+# Create a proxy to this script.
+dev_sys_proxy_script=${assets_dir}/dev-sys-proxy.sh
+echo_color ${cyan} "Creating ${dev_sys_proxy_script} ..."
+cat << EOF > ${dev_sys_proxy_script}
+#!/usr/bin/env bash
+dev_sys_script=${script_path}
+EOF
+cat << 'EOF' >> ${dev_sys_proxy_script}
+exec $(which bash) -c "${dev_sys_script} ${@}"
+EOF
+chmod ${ASSET_SCRIPT_MODE} ${dev_sys_proxy_script}
 
 # bash-environment: Where is it, and is it being managed by an external process?
 # If bash-environment is being managed externally, then the Ansible bash-environment role will not update it.
@@ -300,7 +344,7 @@ fi
 python_version=3.8.3
 if [ -z "$(pyenv versions | awk -v pyver=${python_version} '/^\*?\s+/ && ($1 == "*" ? $2 : $1) == pyver')" ]; then
 	echo_color ${cyan} "Installing Python ${python_version} for the dev-sys Python virtual environment ..."
-	retry_if_fail pyenv install ${python_version} || exit 1
+	retry_if_fail pyenv install ${python_version}
 fi
 
 # Create the dev-sys Python virtual environemnt.

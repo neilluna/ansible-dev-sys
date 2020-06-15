@@ -1,0 +1,54 @@
+---
+- name: Preparing to merge variables ...
+  set_fact:
+    default_var__to_merge: '{{ go_defaults }}'
+    new_var__to_merge: '{{ go | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    expected_type: dict
+    merged_var_name: merged_var
+    recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
+
+- name: Saving the merged variable ...
+  set_fact:
+    go: '{{ merged_var }}'
+
+- name: Creating the asset directory ...
+  file:
+    path: '{{ ansible_env.HOME }}/.dev-sys/go'
+    state: directory
+    mode: u+rwx,go-rwx
+
+- name: Getting or updating the package ...
+  get_url:
+    url: https://dl.google.com/go/go{{ go.version }}.linux-amd64.tar.gz
+    dest: '{{ ansible_env.HOME }}/.dev-sys/go/go{{ go.version }}.linux-amd64.tar.gz'
+    mode: u+rw-x,go-rwx
+  register: go_status
+
+- name: Installing or updating ...
+  when: go_status.changed == true
+  block:
+
+  - name: Removing the previous installation ...
+    file:
+      path: /usr/local/go
+      state: absent
+    become: yes
+
+  - name: Installing ...
+    unarchive:
+      src: '{{ ansible_env.HOME }}/.dev-sys/go/go{{ go.version }}.linux-amd64.tar.gz'
+      dest: /usr/local
+      remote_src: yes
+    become: yes
+
+  # End of block: name: Installing or updating ...
+
+- name: Installing the environment ...
+  copy:
+    src: .bashrc.d/go-vars.sh
+    dest: '{{ ansible_env.HOME }}/.bashrc.d/go-vars.sh'
+    mode: u+x

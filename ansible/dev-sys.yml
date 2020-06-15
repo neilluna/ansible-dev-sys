@@ -10,6 +10,9 @@
   - role: dev-sys
     tags: always
 
+  - role: go
+    tags: go
+
   - role: ruby
     tags: ruby
 

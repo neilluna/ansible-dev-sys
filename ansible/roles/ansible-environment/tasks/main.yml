@@ -1,6 +1,0 @@
----
-- name: Installing the environment ...
-  copy:
-    src: .bashrc.d/ansible-vars.sh
-    dest: ~/.bashrc.d/ansible-vars.sh
-    mode: u+x

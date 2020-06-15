@@ -2,5 +2,5 @@
 - name: Installing ...
   copy:
     src: bin/dev-sys.sh
-    dest: ~/bin/dev-sys.sh
+    dest: '{{ ansible_env.HOME }}/bin/dev-sys.sh'
     mode: u+x

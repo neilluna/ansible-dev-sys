@@ -1,6 +1,6 @@
 ---
-- name: Installing ...
+- name: Installing the environment ...
   copy:
     src: .bashrc.d/pyenv-vars.sh
-    dest: ~/.bashrc.d/pyenv-vars.sh
+    dest: '{{ ansible_env.HOME }}/.bashrc.d/pyenv-vars.sh'
     mode: u+x

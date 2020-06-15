@@ -12,7 +12,7 @@ function echo_usage()
 	echo ""
 	echo "Provision a virtual machine."
 	echo ""
-	echo "Usage: ${script_name} [options] [playbook_name]"
+	echo "Usage: ${script_name} [options] [tag [tag] ...]"
 	echo ""
 	echo "  -h, --help     Output this help information."
 	echo "  -v, --verbose  Verbose output."
@@ -127,7 +127,7 @@ ROOT_GID=0
 # Command-line switch variables.
 from_vagrant=no
 from_update=no
-playbook_name=
+tags=
 verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
@@ -169,20 +169,15 @@ while true; do
 	esac
 done
 while [ ${#} -gt 0 ]; do
-	if [ -z "${playbook_name}" ]; then
-		playbook_name=${1}
+	if [ -z "${tags}" ]; then
+		tags="${1}"
 	else
-		echo "${script_name}: Error: Invalid argument: ${1}" >&2
-		echo_usage
-		exit 1
+		tags="${tags},${1}"
 	fi
 	shift
 done
-if [ -z "${playbook_name}" ]; then
-	playbook_name=common
-fi
 
-echo_color ${cyan} "Script: '${script_path}', playbook: '${playbook_name}'"
+echo_color ${cyan} "Script: '${script_path}'"
 echo_color ${cyan} "Current user: '$(whoami)', home: '${HOME}'"
 echo_color ${cyan} "Current directory: '$(pwd)'"
 
@@ -194,6 +189,19 @@ export PYTHONUNBUFFERED=TRUE
 
 # The provisioning assets directory.
 assets_dir=${HOME}/.dev-sys
+
+# Determine the Ansible tags to be used, and save them for later invocations.
+ANSIBLE_DEV_SYS_TAGS=always
+dev_sys_vars_script=${assets_dir}/dev-sys-vars.sh
+[ -f ${dev_sys_vars_script} ] && source ${dev_sys_vars_script}
+[ -z "${tags}" ] && tags=${ANSIBLE_DEV_SYS_TAGS}
+echo_color ${cyan} "Ansible tags: ${tags}"
+echo_color ${cyan} "Creating ${dev_sys_vars_script} ..."
+cat << EOF > ${dev_sys_vars_script}
+#!/usr/bin/env bash
+ANSIBLE_DEV_SYS_TAGS=${tags}
+EOF
+chmod ${ASSET_SCRIPT_MODE} ${dev_sys_vars_script}
 
 # No need to run these if this script was run from Vagrant or as a rerun after a dev-sys.sh update.
 if [ ${from_vagrant} == no ] && [ ${from_update} == no ]; then
@@ -245,7 +253,7 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		new_dev_sys_script=${new_ansible_dev_sys_dir}/dev-sys.sh
 		chmod ${ASSET_SCRIPT_MODE} ${new_dev_sys_script}
 
-		# Create a separate update script
+		# Create a separate update script.
 		echo_color ${cyan} "Creating ${ansible_dev_sys_update_script} ..."
 		cat <<-EOF > ${ansible_dev_sys_update_script}
 		#!/usr/bin/env bash
@@ -261,11 +269,11 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		echo -e "\e[36mMoving ${new_ansible_dev_sys_dir} to ${ANSIBLE_DEV_SYS_DIR} ...\e[0m"
 		mv ${new_ansible_dev_sys_dir} ${ANSIBLE_DEV_SYS_DIR} || exit 1
 		dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
-		playbook_name=${playbook_name}
+		tags=${tags}
 		EOF
 		cat <<-'EOF' >> ${ansible_dev_sys_update_script}
 		echo -e "\e[36mExecuting ${dev_sys_script} ...\e[0m"
-		exec $(which bash) -c "${dev_sys_script} --from-update ${playbook_name}"
+		exec $(which bash) -c "${dev_sys_script} --from-update ${tags}"
 		EOF
 		chmod ${ASSET_SCRIPT_MODE} ${ansible_dev_sys_update_script}
 		echo_color ${cyan} "Executing ${ansible_dev_sys_update_script} ..."
@@ -284,7 +292,7 @@ cat << EOF > ${dev_sys_proxy_script}
 dev_sys_script=${script_path}
 EOF
 cat << 'EOF' >> ${dev_sys_proxy_script}
-exec $(which bash) -c "${dev_sys_script} ${@}"
+exec $(which bash) -c "${dev_sys_script} ${*}"
 EOF
 chmod ${ASSET_SCRIPT_MODE} ${dev_sys_proxy_script}
 
@@ -515,8 +523,8 @@ chmod ${ASSET_FILE_MODE} ${ansible_config_file}
 export ANSIBLE_CONFIG=${ansible_config_file}
 
 ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
-echo_color ${cyan} "Running Ansible playbook '${playbook_name}' ..."
 cd ${assets_dir}
-ansible-playbook ${ansible_playbook_dir}/${playbook_name}.yml || exit 1
+echo_color ${cyan} "Running Ansible with tags '${tags}' ..."
+ansible-playbook ${ansible_playbook_dir}/dev-sys.yml --tags ${tags} || exit 1
 
 exit 0

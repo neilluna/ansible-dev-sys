@@ -1,21 +1,38 @@
 ---
 - hosts: dev_sys
   roles:
-  - role: update
-  - role: upgrade
-  - role: git
   - role: bash-environment
+    tags: always
+
   - role: pyenv-environment
+    tags: always
+
   - role: dev-sys
-  # - role: aws-dev-venv
-  # - role: aws-configuration
-  #   when: aws_configuration.provision == true
+    tags: always
+
   - role: ruby
+    tags: ruby
+
   # - role: mkcert
+  #   tags: mkcert
+
   - role: nvm
+    tags: nvm
+
   - role: nodejs
+    tags: nodejs
+
   - role: docker
+    tags: docker
+
   - role: docker-compose
+    tags: docker
+
   - role: sqlite
+    tags: sqlite
+
   - role: unzip
+    tags: zip
+
   - role: zip
+    tags: zip

@@ -2,10 +2,10 @@
 - name: Cloning or updating the repository ...
   git:
     repo: https://github.com/nvm-sh/nvm.git
-    dest: ~/.nvm
+    dest: '{{ ansible_env.HOME }}/.nvm'
     version: "v{{ nvm.version }}"
   environment:
-    NVM_HOME: ~/.nvm
+    NVM_HOME: '{{ ansible_env.HOME }}/.nvm'
   register: nvm_status
 
 - name: Installing or updating ...
@@ -15,25 +15,25 @@
   - name: Setting the local core filemode ...
     git_config:
       name: core.filemode
-      repo: ~/.nvm
+      repo: '{{ ansible_env.HOME }}/.nvm'
       scope: local
       value: "false"
 
   - name: Making nvm.sh executable ...
     file:
-      path: ~/.nvm/nvm.sh
+      path: '{{ ansible_env.HOME }}/.nvm/nvm.sh'
       state: file
       mode: u+x
 
   - name: Installing or updating ...
-    shell: ~/.nvm/nvm.sh
+    shell: '{{ ansible_env.HOME }}/.nvm/nvm.sh'
     environment:
-      NVM_HOME: ~/.nvm
+      NVM_HOME: '{{ ansible_env.HOME }}/.nvm'
 
   # End of block: name: Installing or updating ...
 
 - name: Installing the environment ...
   copy:
     src: .bashrc.d/nvm-vars.sh
-    dest: ~/.bashrc.d/nvm-vars.sh
+    dest: '{{ ansible_env.HOME }}/.bashrc.d/nvm-vars.sh'
     mode: u+x

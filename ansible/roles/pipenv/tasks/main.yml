@@ -6,5 +6,5 @@
   become: yes
 
 - name: Installing the environment ...
-  shell: ~/provisioning/bash-environment/install.sh --pipenv-venv-in-project
+  shell: '{{ ansible_env.HOME }}/provisioning/bash-environment/install.sh --pipenv-venv-in-project'
   when: bash_environment_status.before != bash_environment_status.after

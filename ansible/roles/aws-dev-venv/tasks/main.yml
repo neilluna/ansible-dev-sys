@@ -2,13 +2,13 @@
 - name: Creating the virtual environment ...
   command: virtualenv ~/.virtualenvs/aws-dev -p python3
   args:
-    creates: ~/.virtualenvs/aws-dev
+    creates: '{{ ansible_env.HOME }}/.virtualenvs/aws-dev'
 
 - name: Installing ...
   pip:
     name: "{{ packages }}"
     state: latest
-    virtualenv: ~/.virtualenvs/aws-dev
+    virtualenv: '{{ ansible_env.HOME }}/.virtualenvs/aws-dev'
   vars:
     packages:
     - awscli

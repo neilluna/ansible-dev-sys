@@ -16,8 +16,8 @@
   - role: ruby
     tags: ruby
 
-  # - role: mkcert
-  #   tags: mkcert
+  - role: mkcert
+    tags: mkcert
 
   - role: nvm
     tags: nvm

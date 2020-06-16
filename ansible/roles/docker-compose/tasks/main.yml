@@ -1,4 +1,20 @@
 ---
+- name: Preparing to merge variables ...
+  set_fact:
+    default_var__to_merge: '{{ docker_compose_defaults | default({}) }}'
+    new_var__to_merge: '{{ docker_compose | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    expected_type: dict
+    merged_var_name: merged_var
+    recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
+
+- name: Saving the merged variable ...
+  set_fact:
+    docker_compose: '{{ merged_var }}'
+
 - name: Installing ...
   get_url:
     url: https://github.com/docker/compose/releases/download/{{ docker_compose.version }}/docker-compose-Linux-x86_64

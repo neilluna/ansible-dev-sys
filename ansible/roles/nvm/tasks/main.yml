@@ -1,4 +1,20 @@
 ---
+- name: Preparing to merge variables ...
+  set_fact:
+    default_var__to_merge: '{{ nvm_defaults | default({}) }}'
+    new_var__to_merge: '{{ nvm | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    expected_type: dict
+    merged_var_name: merged_var
+    recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
+
+- name: Saving the merged variable ...
+  set_fact:
+    nvm: '{{ merged_var }}'
+
 - name: Cloning or updating the repository ...
   git:
     repo: https://github.com/nvm-sh/nvm.git

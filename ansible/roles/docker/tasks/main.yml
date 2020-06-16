@@ -1,7 +1,7 @@
 ---
 - name: Preparing to merge variables ...
   set_fact:
-    default_var__to_merge: '{{ docker_defaults }}'
+    default_var__to_merge: '{{ docker_defaults | default({}) }}'
     new_var__to_merge: '{{ docker | default({}) }}'
 
 - name: Merging the variables ...

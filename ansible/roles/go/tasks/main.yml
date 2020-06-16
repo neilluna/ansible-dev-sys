@@ -1,7 +1,7 @@
 ---
 - name: Preparing to merge variables ...
   set_fact:
-    default_var__to_merge: '{{ go_defaults }}'
+    default_var__to_merge: '{{ go_defaults | default({}) }}'
     new_var__to_merge: '{{ go | default({}) }}'
 
 - name: Merging the variables ...

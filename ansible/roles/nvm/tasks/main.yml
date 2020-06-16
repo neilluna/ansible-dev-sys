@@ -1,5 +1,5 @@
 ---
-- name: Preparing to merge variables ...
+- name: Preparing to merge the variables ...
   set_fact:
     default_var__to_merge: '{{ nvm_defaults | default({}) }}'
     new_var__to_merge: '{{ nvm | default({}) }}'
@@ -11,7 +11,7 @@
     recursive_dict_merge: yes
     suffix_to_merge: var__to_merge
 
-- name: Saving the merged variable ...
+- name: Saving the merged variables ...
   set_fact:
     nvm: '{{ merged_var }}'
 
@@ -48,7 +48,7 @@
 
   # End of block: name: Installing or updating ...
 
-- name: Installing the environment ...
+- name: Installing the Bash startup script ...
   copy:
     src: .bashrc.d/nvm-vars.sh
     dest: '{{ ansible_env.HOME }}/.bashrc.d/nvm-vars.sh'

@@ -1,5 +1,5 @@
 ---
-- name: Preparing to merge variables ...
+- name: Preparing to merge the variables ...
   set_fact:
     default_var__to_merge: '{{ mkcert_defaults | default({}) }}'
     new_var__to_merge: '{{ mkcert | default({}) }}'
@@ -11,11 +11,11 @@
     recursive_dict_merge: yes
     suffix_to_merge: var__to_merge
 
-- name: Saving the merged variable ...
+- name: Saving the merged variables ...
   set_fact:
     mkcert: '{{ merged_var }}'
 
-- name: Installing prerequisites ...
+- name: Installing the prerequisites ...
   apt:
     name: libnss3-tools
     force_apt_get: yes

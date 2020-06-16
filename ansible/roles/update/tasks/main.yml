@@ -4,3 +4,7 @@
     force_apt_get: yes
     update_cache: yes
   become: yes
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

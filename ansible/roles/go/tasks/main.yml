@@ -52,3 +52,7 @@
     src: .bashrc.d/go-vars.sh
     dest: '{{ ansible_env.HOME }}/.bashrc.d/go-vars.sh'
     mode: u+x
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

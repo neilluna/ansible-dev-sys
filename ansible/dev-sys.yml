@@ -1,41 +1,69 @@
 ---
 - hosts: dev_sys
+  vars:
+    roles_already_executed: []
+
   roles:
   - role: bash-environment
     tags: always
-
-  - role: pyenv-environment
-    tags: always
+    when: "'bash-environment' not in roles_already_executed"
 
   - role: dev-sys
     tags: always
-
-  - role: go
-    tags: go
-
-  - role: ruby
-    tags: ruby
-
-  - role: mkcert
-    tags: mkcert
-
-  - role: nvm
-    tags: nvm
-
-  - role: nodejs
-    tags: nodejs
+    when: "'dev-sys' not in roles_already_executed"
 
   - role: docker
     tags: docker
+    when: "'docker' not in roles_already_executed"
 
   - role: docker-compose
     tags: docker
+    when: "'docker-compose' not in roles_already_executed"
+
+  - role: git
+    tags: git
+    when: "'git' not in roles_already_executed"
+
+  - role: go
+    tags: go
+    when: "'go' not in roles_already_executed"
+
+  - role: mkcert
+    tags: mkcert
+    when: "'mkcert' not in roles_already_executed"
+
+  - role: nodejs
+    tags: nodejs
+    when: "'nodejs' not in roles_already_executed"
+
+  - role: nvm
+    tags: nvm
+    when: "'nvm' not in roles_already_executed"
+
+  - role: pyenv-environment
+    tags: always
+    when: "'pyenv-environment' not in roles_already_executed"
+
+  - role: ruby
+    tags: ruby
+    when: "'ruby' not in roles_already_executed"
 
   - role: sqlite
     tags: sqlite
+    when: "'sqlite' not in roles_already_executed"
 
   - role: unzip
     tags: zip
+    when: "'zip' not in roles_already_executed"
+
+  - role: update
+    tags: update
+    when: "'update' not in roles_already_executed"
+
+  - role: upgrade
+    tags: upgrade
+    when: "'upgrade' not in roles_already_executed"
 
   - role: zip
     tags: zip
+    when: "'zip' not in roles_already_executed"

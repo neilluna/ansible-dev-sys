@@ -40,3 +40,7 @@
     group: root
     owner: root
   become: yes
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

@@ -1,3 +1,4 @@
 ---
 dependencies:
 - role: nvm
+  when: "'nvm' not in roles_already_executed"

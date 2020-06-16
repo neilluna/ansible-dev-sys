@@ -1,3 +1,4 @@
 ---
 dependencies:
 - role: bash-environment
+  when: "'bash-environment' not in roles_already_executed"

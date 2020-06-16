@@ -1,3 +1,4 @@
 ---
 dependencies:
 - role: update
+  when: "'update' not in roles_already_executed"

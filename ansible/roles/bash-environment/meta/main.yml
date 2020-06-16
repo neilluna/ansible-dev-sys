@@ -1,3 +1,4 @@
 ---
 dependencies:
 - role: git
+  when: "'git' not in roles_already_executed"

@@ -4,21 +4,21 @@
     roles_already_executed: []
 
   roles:
-  - role: bash-environment
+  - role: bash_environment
     tags: always
-    when: "'bash-environment' not in roles_already_executed"
+    when: "'bash_environment' not in roles_already_executed"
 
-  - role: dev-sys
+  - role: dev_sys
     tags: always
-    when: "'dev-sys' not in roles_already_executed"
+    when: "'dev_sys' not in roles_already_executed"
 
   - role: docker
     tags: docker
     when: "'docker' not in roles_already_executed"
 
-  - role: docker-compose
+  - role: docker_compose
     tags: docker
-    when: "'docker-compose' not in roles_already_executed"
+    when: "'docker_compose' not in roles_already_executed"
 
   - role: git
     tags: git
@@ -40,9 +40,9 @@
     tags: nvm
     when: "'nvm' not in roles_already_executed"
 
-  - role: pyenv-environment
+  - role: pyenv_environment
     tags: always
-    when: "'pyenv-environment' not in roles_already_executed"
+    when: "'pyenv_environment' not in roles_already_executed"
 
   - role: ruby
     tags: ruby

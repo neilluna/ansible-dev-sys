@@ -348,13 +348,13 @@ fi
 
 # Install an isolated instance of Python for use by the dev-sys tools and Ansible.
 python_version=3.8.3
-if [ -z "$(pyenv versions | awk -v pyver=${python_version} '/^\*?\s+/ && ($1 == "*" ? $2 : $1) == pyver')" ]; then
+if [ -z "$(pyenv versions | awk -v pyver=${python_version} '/^\*? +/ && ($1 == "*" ? $2 : $1) == pyver')" ]; then
 	echo_color ${cyan} "Installing Python ${python_version} for the dev-sys Python virtual environment ..."
 	retry_if_fail pyenv install ${python_version}
 fi
 
 # Create the dev-sys Python virtual environemnt.
-if [ -z "$(pyenv versions | awk '/^\*?\s+/ && ($1 == "*" ? $2 : $1) == "dev-sys"')" ]; then
+if [ -z "$(pyenv versions | awk '/^\*? +/ && ($1 == "*" ? $2 : $1) == "dev-sys"')" ]; then
 	echo_color ${cyan} "Creating the dev-sys Python virtual environment ..."
 	pyenv virtualenv ${python_version} dev-sys
 fi

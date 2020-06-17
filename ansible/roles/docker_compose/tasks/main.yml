@@ -1,4 +1,20 @@
 ---
+- name: Preparing to merge the variables ...
+  set_fact:
+    default_var__to_merge: '{{ docker_compose_defaults | default({}) }}'
+    new_var__to_merge: '{{ docker_compose | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    expected_type: dict
+    merged_var_name: merged_var
+    recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
+
+- name: Saving the merged variables ...
+  set_fact:
+    docker_compose: '{{ merged_var }}'
+
 - name: Installing ...
   get_url:
     url: https://github.com/docker/compose/releases/download/{{ docker_compose.version }}/docker-compose-Linux-x86_64
@@ -8,7 +24,7 @@
     owner: root
   become: yes
 
-- name: Creating symbolic links ...
+- name: Creating the symbolic link ...
   file:
     src: /usr/local/bin/docker-compose
     dest: /usr/bin/docker-compose
@@ -24,3 +40,7 @@
     group: root
     owner: root
   become: yes
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

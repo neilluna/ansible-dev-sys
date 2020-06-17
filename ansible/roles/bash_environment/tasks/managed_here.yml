@@ -6,7 +6,7 @@
     version: "{{ bash_environment.version }}"
   register: bash_environment_git_status
 
-- name: Checking if a change occurred ...
+- name: Checking if the repository changed ...
   set_fact:
     run_install: '{{ bash_environment_git_status.before != bash_environment_git_status.after }}'
 

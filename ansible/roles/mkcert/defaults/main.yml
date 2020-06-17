@@ -1,0 +1,3 @@
+---
+mkcert_defaults:
+  version: "1.4.1"

@@ -1,5 +1,5 @@
 ---
-- name: Preparing to merge variables ...
+- name: Preparing to merge the variables ...
   set_fact:
     default_var__to_merge: '{{ bash_environment_defaults | default({}) }}'
     new_var__to_merge: '{{ bash_environment | default({}) }}'
@@ -11,17 +11,17 @@
     recursive_dict_merge: yes
     suffix_to_merge: var__to_merge
 
-- name: Saving the merged variable ...
+- name: Saving the merged variables ...
   set_fact:
     bash_environment: '{{ merged_var }}'
 
 - name: If managed by this role (not externally) ...
   when: bash_environment.managed_externally == false
-  import_tasks: tasks/managed_here.yml
+  include_tasks: tasks/managed_here.yml
 
 - name: If managed externally (not by this role) ...
   when: bash_environment.managed_externally == true
-  import_tasks: tasks/managed_externally.yml
+  include_tasks: tasks/managed_externally.yml
 
 - name: Installing ...
   when: run_install == true
@@ -33,7 +33,11 @@
       state: file
       mode: u+x
 
-  - name: Installing the environment ...
+  - name: Installing the Bash startup scripts ...
     shell: "{{ bash_environment.dir }}/install.sh"
 
   # End of block: name: Installing ...
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

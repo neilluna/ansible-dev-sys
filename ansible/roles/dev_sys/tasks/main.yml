@@ -1,10 +1,9 @@
 ---
 - name: Installing ...
-  apt:
-    name: sqlite
-    force_apt_get: yes
-    state: latest
-  become: yes
+  copy:
+    src: bin/dev-sys.sh
+    dest: '{{ ansible_env.HOME }}/bin/dev-sys.sh'
+    mode: u+x
 
 - name: Marking the role as executed ...
   set_fact:

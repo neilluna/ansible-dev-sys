@@ -9,6 +9,6 @@
     - virtualenvwrapper
   become: yes
 
-- name: Installing the environment ...
+- name: Installing the Bash startup scripts ...
   shell: '{{ ansible_env.HOME }}/provisioning/bash-environment/install.sh --python3-virtualenv'
   when: bash_environment_status.before != bash_environment_status.after

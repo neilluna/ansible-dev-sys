@@ -1,0 +1,10 @@
+---
+- name: Installing the Bash startup script ...
+  copy:
+    src: .bashrc.d/pyenv-vars.sh
+    dest: '{{ ansible_env.HOME }}/.bashrc.d/pyenv-vars.sh'
+    mode: u+x
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

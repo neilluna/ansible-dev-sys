@@ -187,8 +187,9 @@ export DEBIAN_FRONTEND=noninteractive
 # Do not buffer Python stdout.
 export PYTHONUNBUFFERED=TRUE
 
-# The provisioning assets directory.
+# Create the provisioning assets directory.
 assets_dir=${HOME}/.dev-sys
+create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
 
 # Determine the Ansible tags to be used, and save them for later invocations.
 ANSIBLE_DEV_SYS_TAGS=always
@@ -219,9 +220,6 @@ if [ ${from_vagrant} == no ] && [ ${from_update} == no ]; then
 
 	echo_color ${cyan} "Installing or updating git ..."
 	retry_if_fail sudo apt-get install --yes git
-
-	# Create the provisioning assets directory.
-	create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
 fi
 
 # ansible-dev-sys: Where is it, and is it being managed by an external process?

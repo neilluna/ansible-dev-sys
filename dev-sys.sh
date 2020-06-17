@@ -398,6 +398,10 @@ from ansible_merge_vars import ActionModule
 EOF
 chmod ${ASSET_SCRIPT_MODE} ${merge_vars_action_plugin}
 
+# Create the SSH directory.
+dev_sys_ssh_dir=${HOME}/.ssh
+create_dir_with_mode ${ASSET_DIR_MODE} ${dev_sys_ssh_dir}
+
 # Create the SSH keys used to run commands as the dev-sys user.
 dev_sys_ssh_key_basename=id_dev-sys
 dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_basename}
@@ -409,7 +413,11 @@ if [ ! -f ${dev_sys_ssh_private_key_file} ]; then
 	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_public_key_file}
 fi
 dev_sys_ssh_public_key_contents=$(cat ${dev_sys_ssh_public_key_file})
-dev_sys_authorized_keys_file=${HOME}/.ssh/authorized_keys
+dev_sys_authorized_keys_file=${dev_sys_ssh_dir}/authorized_keys
+if [ ! -f ${dev_sys_authorized_keys_file} ]; then
+	touch ${dev_sys_authorized_keys_file}
+	chmod ${ASSET_FILE_MODE} ${dev_sys_authorized_keys_file}
+fi
 grep -Fx "${dev_sys_ssh_public_key_contents}" ${dev_sys_authorized_keys_file} > /dev/null
 if [ ${?} -ne 0 ]; then
 	echo_color ${cyan} "Adding the dev-sys SSH public key to ${dev_sys_authorized_keys_file} ..."

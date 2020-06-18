@@ -4,6 +4,10 @@
     roles_already_executed: []
 
   roles:
+  - role: aws_cli
+    tags: aws
+    when: "'aws_cli' not in roles_already_executed"
+
   - role: bash_environment
     tags: always
     when: "'bash_environment' not in roles_already_executed"

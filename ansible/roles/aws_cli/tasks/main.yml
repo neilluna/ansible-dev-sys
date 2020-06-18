@@ -1,0 +1,64 @@
+---
+- name: Preparing to merge the variables ...
+  set_fact:
+    default_var__to_merge: '{{ aws_cli_defaults | default({}) }}'
+    new_var__to_merge: '{{ aws_cli | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    expected_type: dict
+    merged_var_name: merged_var
+    recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
+
+- name: Saving the merged variables ...
+  set_fact:
+    aws_cli: '{{ merged_var }}'
+
+- name: Creating the asset directory ...
+  file:
+    path: '{{ ansible_env.HOME }}/.dev-sys/aws_cli'
+    state: directory
+    mode: u+rwx,go-rwx
+
+- name: Getting or updating the package ...
+  get_url:
+    url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+    dest: '{{ ansible_env.HOME }}/.dev-sys/aws_cli/awscliv2.zip'
+    mode: u+rw-x,go-rwx
+  register: aws_cli_status
+
+- name: Installing or updating ...
+  when: aws_cli_status.changed == true
+  block:
+
+  - name: Removing the previous installation ...
+    file:
+      path: '{{ item }}'
+      state: absent
+    loop:
+    - /usr/local/bin/aws
+    - /usr/local/bin/aws_completer
+    - /usr/local/aws-cli
+    become: yes
+
+  - name: Unpacking the installation items ...
+    unarchive:
+      src: '{{ ansible_env.HOME }}/.dev-sys/aws_cli/awscliv2.zip'
+      dest: '{{ ansible_env.HOME }}/.dev-sys/aws_cli'
+      remote_src: yes
+
+  - name: Installing ...
+    shell: '{{ ansible_env.HOME }}/.dev-sys/aws_cli/aws/install -i /usr/local/aws-cli -b /usr/local/bin'
+    become: yes
+
+  - name: Removing the installation items ...
+    file:
+      path: '{{ ansible_env.HOME }}/.dev-sys/aws_cli/aws'
+      state: absent
+
+  # End of block: name: Installing or updating ...
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

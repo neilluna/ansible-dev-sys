@@ -126,12 +126,11 @@ ROOT_GID=0
 
 # Command-line switch variables.
 from_vagrant=no
-from_update=no
 tags=
 verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
-ARGS=$(getopt -o hv -l from-vagrant,from-update,help,verbose,version -n ${script_name} -- "${@}")
+ARGS=$(getopt -o hv -l from-vagrant,help,verbose,version -n ${script_name} -- "${@}")
 if [ ${?} != 0 ]; then
 	exit 1
 fi
@@ -144,10 +143,6 @@ while true; do
 	case "${1}" in
 		--from-vagrant)
 			from_vagrant=yes
-			shift
-			;;
-		--from-update)
-			from_update=yes
 			shift
 			;;
 		-h | --help)
@@ -205,7 +200,7 @@ EOF
 chmod ${ASSET_SCRIPT_MODE} ${dev_sys_vars_script}
 
 # No need to run these if this script was run from Vagrant or as a rerun after a dev-sys.sh update.
-if [ ${from_vagrant} == no ] && [ ${from_update} == no ]; then
+if [ ${from_vagrant} == no ] && [ -z "${dev_sys_called_from_own_update}" ]; then
 	# Create /opt if it is missing.
 	create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
 
@@ -235,7 +230,7 @@ fi
 # If ansible-dev-sys is being managed by this script (not externally), then install or update it.
 if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 	ansible_dev_sys_update_script=${assets_dir}/ansible-dev-sys-update.sh
-	if [ ${from_update} == no ]; then
+	if [ -z "${dev_sys_called_from_own_update}" ]; then
 
 		# Clone a new copy of ansible-dev-sys.
 		new_ansible_dev_sys_dir=${assets_dir}/new-ansible-dev-sys
@@ -267,11 +262,10 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		echo -e "\e[36mMoving ${new_ansible_dev_sys_dir} to ${ANSIBLE_DEV_SYS_DIR} ...\e[0m"
 		mv ${new_ansible_dev_sys_dir} ${ANSIBLE_DEV_SYS_DIR} || exit 1
 		dev_sys_script=${ANSIBLE_DEV_SYS_DIR}/dev-sys.sh
-		tags=${tags}
 		EOF
 		cat <<-'EOF' >> ${ansible_dev_sys_update_script}
 		echo -e "\e[36mExecuting ${dev_sys_script} ...\e[0m"
-		exec $(which bash) -c "${dev_sys_script} --from-update ${tags}"
+		dev_sys_called_from_own_update=not_blank exec $(which bash) -c "${dev_sys_script}"
 		EOF
 		chmod ${ASSET_SCRIPT_MODE} ${ansible_dev_sys_update_script}
 		echo_color ${cyan} "Executing ${ansible_dev_sys_update_script} ..."
@@ -362,7 +356,7 @@ if [ ! -d ${PYENV_ROOT}/versions/${python_version}/envs/dev-sys ]; then
 	echo_color ${cyan} "Creating the dev-sys Python virtual environment ..."
 	pyenv virtualenv ${python_version} dev-sys
 fi
-echo_color ${cyan} "Setting ${assets_dir} to use the dev-sys Python virtual environment ..."
+echo_color ${cyan} "Activating the dev-sys Python virtual environment ..."
 export PYENV_VERSION=dev-sys 
 
 # Install or update Ansible.

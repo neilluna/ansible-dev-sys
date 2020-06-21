@@ -363,11 +363,9 @@ if [ ! -d ${PYENV_ROOT}/versions/${python_version}/envs/dev-sys ]; then
 	pyenv virtualenv ${python_version} dev-sys
 fi
 echo_color ${cyan} "Setting ${assets_dir} to use the dev-sys Python virtual environment ..."
-cd ${assets_dir}
-pyenv local dev-sys 
+export PYENV_VERSION=dev-sys 
 
 # Install or update Ansible.
-cd ${assets_dir}
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
 	echo_color ${cyan} "Installing Ansible ..."
 	retry_if_fail pip install ansible --disable-pip-version-check
@@ -387,7 +385,6 @@ ansible_action_plugins_dir=${ansible_assets_dir}/action_plugins
 create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_action_plugins_dir}
 
 # Install or update, and configure the ansible-merge-vars plugin.
-cd ${assets_dir}
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible-merge-vars"')" ]; then
 	echo_color ${cyan} "Installing ansible_merge_vars ..."
 	retry_if_fail pip install ansible_merge_vars --disable-pip-version-check
@@ -533,7 +530,6 @@ chmod ${ASSET_FILE_MODE} ${ansible_config_file}
 export ANSIBLE_CONFIG=${ansible_config_file}
 
 ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
-cd ${assets_dir}
 echo_color ${cyan} "Running Ansible with tags '${tags}' ..."
 ansible-playbook ${ansible_playbook_dir}/dev-sys.yml --tags ${tags} || exit 1
 

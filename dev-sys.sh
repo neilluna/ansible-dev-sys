@@ -176,6 +176,9 @@ echo_color ${cyan} "Script: '${script_path}'"
 echo_color ${cyan} "Current user: '$(whoami)', home: '${HOME}'"
 echo_color ${cyan} "Current directory: '$(pwd)'"
 
+[ ${from_vagrant} == yes ] && echo_color ${cyan} "Continuing from vagrant-dev-sys ..."
+[ ! -z "${dev_sys_called_from_own_update}" ] && echo_color ${cyan} "Continuing from dev-sys self update ..."
+
 # Make installations non-interactive.
 export DEBIAN_FRONTEND=noninteractive
 

@@ -1,4 +1,0 @@
----
-dependencies:
-- role: bash-environment
-- role: python3

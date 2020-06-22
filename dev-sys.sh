@@ -125,12 +125,11 @@ ROOT_UID=0
 ROOT_GID=0
 
 # Command-line switch variables.
-from_vagrant=no
 tags=
 verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
-ARGS=$(getopt -o hv -l from-vagrant,help,verbose,version -n ${script_name} -- "${@}")
+ARGS=$(getopt -o hv -l help,verbose,version -n ${script_name} -- "${@}")
 if [ ${?} != 0 ]; then
 	exit 1
 fi
@@ -141,10 +140,6 @@ eval set -- "${ARGS}"
 # Parse the command line arguments.
 while true; do
 	case "${1}" in
-		--from-vagrant)
-			from_vagrant=yes
-			shift
-			;;
 		-h | --help)
 			echo_usage
 			exit 0
@@ -176,8 +171,8 @@ echo_color ${cyan} "Script: '${script_path}'"
 echo_color ${cyan} "Current user: '$(whoami)', home: '${HOME}'"
 echo_color ${cyan} "Current directory: '$(pwd)'"
 
-[ ${from_vagrant} == yes ] && echo_color ${cyan} "Continuing from vagrant-dev-sys ..."
-[ ! -z "${dev_sys_called_from_own_update}" ] && echo_color ${cyan} "Continuing from dev-sys self update ..."
+[ ! -z "${called_from_vagrant_dev_sys}" ] && echo_color ${cyan} "Called from vagrant-dev-sys ..."
+[ ! -z "${called_from_self_update}" ] && echo_color ${cyan} "Called from dev-sys self update ..."
 
 # Make installations non-interactive.
 export DEBIAN_FRONTEND=noninteractive
@@ -202,8 +197,8 @@ ANSIBLE_DEV_SYS_TAGS=${tags}
 EOF
 chmod ${ASSET_SCRIPT_MODE} ${dev_sys_vars_script}
 
-# No need to run these if this script was run from Vagrant or as a rerun after a dev-sys.sh update.
-if [ ${from_vagrant} == no ] && [ -z "${dev_sys_called_from_own_update}" ]; then
+# No need to run these steps if this script was run from vagrant-dev-sys or as a rerun after a dev-sys.sh update.
+if [ -z "${called_from_vagrant_dev_sys}" ] && [ -z "${called_from_self_update}" ]; then
 	# Create /opt if it is missing.
 	create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
 
@@ -233,7 +228,7 @@ fi
 # If ansible-dev-sys is being managed by this script (not externally), then install or update it.
 if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 	ansible_dev_sys_update_script=${assets_dir}/ansible-dev-sys-update.sh
-	if [ -z "${dev_sys_called_from_own_update}" ]; then
+	if [ -z "${called_from_self_update}" ]; then
 
 		# Clone a new copy of ansible-dev-sys.
 		new_ansible_dev_sys_dir=${assets_dir}/new-ansible-dev-sys
@@ -268,7 +263,7 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		EOF
 		cat <<-'EOF' >> ${ansible_dev_sys_update_script}
 		echo -e "\e[36mExecuting ${dev_sys_script} ...\e[0m"
-		dev_sys_called_from_own_update=not_blank exec $(which bash) -c "${dev_sys_script}"
+		called_from_self_update=not_blank exec $(which bash) -c "${dev_sys_script}"
 		EOF
 		chmod ${ASSET_SCRIPT_MODE} ${ansible_dev_sys_update_script}
 		echo_color ${cyan} "Executing ${ansible_dev_sys_update_script} ..."

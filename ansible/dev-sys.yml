@@ -32,6 +32,10 @@
     tags: go
     when: "'go' not in roles_already_executed"
 
+  - role: mercurial
+    tags: mercurial
+    when: "'mercurial' not in roles_already_executed"
+
   - role: mkcert
     tags: mkcert
     when: "'mkcert' not in roles_already_executed"

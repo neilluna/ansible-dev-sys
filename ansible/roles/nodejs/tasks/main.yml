@@ -23,8 +23,8 @@
 - name: Checking the default version ...
   shell: bash -c "source ~/.nvm/nvm.sh && nvm ls --no-colors | grep -e 'default -> {{ nodejs.version }}'"
   register: nvm_check_for_correct_version
-  changed_when: False
-  failed_when: False
+  changed_when: false
+  failed_when: false
 
 - name: Setting the default version ...
   shell: bash -c "source ~/.nvm/nvm.sh && nvm alias default {{ nodejs.version }}"

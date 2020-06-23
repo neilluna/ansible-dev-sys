@@ -1,0 +1,26 @@
+---
+- name: Preparing to merge the variables ...
+  set_fact:
+    default_var__to_merge: '{{ python_defaults | default({}) }}'
+    new_var__to_merge: '{{ python | default({}) }}'
+
+- name: Merging the variables ...
+  merge_vars:
+    expected_type: dict
+    merged_var_name: merged_var
+    recursive_dict_merge: yes
+    suffix_to_merge: var__to_merge
+
+- name: Saving the merged variables ...
+  set_fact:
+    python: '{{ merged_var }}'
+
+- name: Installing ...
+  include_tasks: tasks/install_version.yml
+  vars:
+    version: '{{ item }}'
+  with_items: '{{ python.versions }}'
+
+- name: Marking the role as executed ...
+  set_fact:
+    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"

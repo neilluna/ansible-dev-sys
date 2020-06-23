@@ -1,0 +1,11 @@
+---
+- name: Checking if version {{ version }} is installed ...
+  stat:
+    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ version }}"
+  register: python_version_status
+
+- name: Installing version {{ version }} ...
+  when: python_version_status.stat.exists == false
+  args:
+    executable: /bin/bash
+  shell: source {{ ansible_env.HOME }}/.dev-sys/pyenv/pyenv-vars.sh && pyenv install {{ version }}

@@ -48,6 +48,10 @@
     tags: always
     when: "'pyenv_environment' not in roles_already_executed"
 
+  - role: python
+    tags: python
+    when: "'python' not in roles_already_executed"
+
   - role: ruby
     tags: ruby
     when: "'ruby' not in roles_already_executed"

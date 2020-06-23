@@ -47,11 +47,11 @@
 
 - name: Adding users to the Docker group ...
   user:
-    name: "{{ item }}"
+    name: '{{ item }}'
     groups:
     - docker
     append: yes
-  with_items: "{{ docker.users }}"
+  with_items: '{{ docker.users }}'
   become: yes
 
 - name: Marking the role as executed ...

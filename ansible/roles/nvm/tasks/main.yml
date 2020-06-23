@@ -19,7 +19,7 @@
   git:
     repo: https://github.com/nvm-sh/nvm.git
     dest: '{{ ansible_env.HOME }}/.nvm'
-    version: "v{{ nvm.version }}"
+    version: 'v{{ nvm.version }}'
   environment:
     NVM_HOME: '{{ ansible_env.HOME }}/.nvm'
   register: nvm_status
@@ -33,7 +33,7 @@
       name: core.filemode
       repo: '{{ ansible_env.HOME }}/.nvm'
       scope: local
-      value: "false"
+      value: 'false'
 
   - name: Making nvm.sh executable ...
     file:

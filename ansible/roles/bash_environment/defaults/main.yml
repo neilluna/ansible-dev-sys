@@ -2,4 +2,4 @@
 bash_environment_defaults:
   managed_externally: false
   run_install: false
-  version: 'HEAD'
+  version: HEAD

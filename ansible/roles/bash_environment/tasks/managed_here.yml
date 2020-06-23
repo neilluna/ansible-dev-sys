@@ -2,8 +2,8 @@
 - name: Cloning or updating the repository ...
   git:
     repo: https://github.com/neilluna/bash-environment.git
-    dest: "{{ bash_environment.dir }}"
-    version: "{{ bash_environment.version }}"
+    dest: '{{ bash_environment.dir }}'
+    version: '{{ bash_environment.version }}'
   register: bash_environment_git_status
 
 - name: Checking if the repository changed ...
@@ -17,8 +17,8 @@
   - name: Setting the local core filemode ...
     git_config:
       name: core.filemode
-      repo: "{{ bash_environment.dir }}"
+      repo: '{{ bash_environment.dir }}'
       scope: local
-      value: "false"
+      value: 'false'
 
   # End of block: name: Installing or updating ...

@@ -29,12 +29,12 @@
 
   - name: Making install.sh executable ...
     file:
-      path: "{{ bash_environment.dir }}/install.sh"
+      path: '{{ bash_environment.dir }}/install.sh'
       state: file
       mode: u+x
 
   - name: Installing the Bash startup scripts ...
-    shell: "{{ bash_environment.dir }}/install.sh"
+    shell: '{{ bash_environment.dir }}/install.sh'
 
   # End of block: name: Installing ...
 

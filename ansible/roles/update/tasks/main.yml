@@ -1,5 +1,5 @@
 ---
-- name: Running apt update ...
+- name: Running apt-get update ...
   apt:
     force_apt_get: yes
     update_cache: yes

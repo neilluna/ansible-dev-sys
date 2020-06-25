@@ -1,5 +1,5 @@
 ---
-- name: Running apt safe upgrade ...
+- name: Running apt-get safe upgrade ...
   apt:
     force_apt_get: yes
     upgrade: safe

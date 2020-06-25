@@ -371,11 +371,6 @@ fi
 ansible_assets_dir=${assets_dir}/ansible
 create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_assets_dir}
 
-# Create the Ansible action plugins directory.
-# This is where Ansible action plugins will be stored.
-ansible_action_plugins_dir=${ansible_assets_dir}/action_plugins
-create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_action_plugins_dir}
-
 # Create the SSH directory.
 dev_sys_ssh_dir=${HOME}/.ssh
 create_dir_with_mode ${ASSET_DIR_MODE} ${dev_sys_ssh_dir}
@@ -489,7 +484,6 @@ ansible_config_file=${ansible_assets_dir}/ansible.cfg
 echo_color ${cyan} "Creating ${ansible_config_file} ..."
 cat << EOF > ${ansible_config_file}
 [defaults]
-action_plugins = ${ansible_action_plugins_dir}
 force_color = True
 inventory = ${ansible_inventory_file}
 roles_path = ${ANSIBLE_DEV_SYS_DIR}/ansible/roles

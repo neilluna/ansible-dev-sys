@@ -1,27 +1,11 @@
 ---
-- name: Preparing to merge the variables ...
-  set_fact:
-    default_var__to_merge: '{{ nvm_defaults | default({}) }}'
-    new_var__to_merge: '{{ nvm | default({}) }}'
-
-- name: Merging the variables ...
-  merge_vars:
-    expected_type: dict
-    merged_var_name: merged_var
-    recursive_dict_merge: yes
-    suffix_to_merge: var__to_merge
-
-- name: Saving the merged variables ...
-  set_fact:
-    nvm: '{{ merged_var }}'
-
 - name: Cloning or updating the repository ...
   git:
     repo: https://github.com/nvm-sh/nvm.git
-    dest: '{{ ansible_env.HOME }}/.nvm'
-    version: 'v{{ nvm.version }}'
+    dest: '{{ ansible_user_dir }}/.nvm'
+    version: 'v{{ nvm_version }}'
   environment:
-    NVM_HOME: '{{ ansible_env.HOME }}/.nvm'
+    NVM_HOME: '{{ ansible_user_dir }}/.nvm'
   register: nvm_status
 
 - name: Installing or updating ...
@@ -31,29 +15,29 @@
   - name: Setting the local core filemode ...
     git_config:
       name: core.filemode
-      repo: '{{ ansible_env.HOME }}/.nvm'
+      repo: '{{ ansible_user_dir }}/.nvm'
       scope: local
       value: 'false'
 
   - name: Making nvm.sh executable ...
     file:
-      path: '{{ ansible_env.HOME }}/.nvm/nvm.sh'
+      path: '{{ ansible_user_dir }}/.nvm/nvm.sh'
       state: file
       mode: u+x
 
   - name: Installing or updating ...
-    shell: '{{ ansible_env.HOME }}/.nvm/nvm.sh'
+    shell: '{{ ansible_user_dir }}/.nvm/nvm.sh'
     environment:
-      NVM_HOME: '{{ ansible_env.HOME }}/.nvm'
+      NVM_HOME: '{{ ansible_user_dir }}/.nvm'
 
   # End of block: name: Installing or updating ...
 
 - name: Installing the Bash startup script ...
   copy:
     src: .bashrc.d/nvm-vars.sh
-    dest: '{{ ansible_env.HOME }}/.bashrc.d/nvm-vars.sh'
+    dest: '{{ ansible_user_dir }}/.bashrc.d/nvm-vars.sh'
     mode: u+x
 
-- name: Marking the role as executed ...
+- name: Marking the role as evaluated ...
   set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

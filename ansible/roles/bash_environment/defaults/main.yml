@@ -1,5 +1,4 @@
 ---
-bash_environment_defaults:
-  managed_externally: false
-  run_install: false
-  version: master
+bash_environment_managed_externally: false
+bash_environment_run_install: false
+bash_environment_version: master

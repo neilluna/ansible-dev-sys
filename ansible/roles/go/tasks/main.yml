@@ -1,30 +1,14 @@
 ---
-- name: Preparing to merge the variables ...
-  set_fact:
-    default_var__to_merge: '{{ go_defaults | default({}) }}'
-    new_var__to_merge: '{{ go | default({}) }}'
-
-- name: Merging the variables ...
-  merge_vars:
-    expected_type: dict
-    merged_var_name: merged_var
-    recursive_dict_merge: yes
-    suffix_to_merge: var__to_merge
-
-- name: Saving the merged variables ...
-  set_fact:
-    go: '{{ merged_var }}'
-
 - name: Creating the asset directory ...
   file:
-    path: '{{ ansible_env.HOME }}/.dev-sys/go'
+    path: '{{ ansible_user_dir }}/.dev-sys/go'
     state: directory
     mode: u+rwx,go-rwx
 
 - name: Getting or updating the package ...
   get_url:
-    url: https://dl.google.com/go/go{{ go.version }}.linux-amd64.tar.gz
-    dest: '{{ ansible_env.HOME }}/.dev-sys/go/go{{ go.version }}.linux-amd64.tar.gz'
+    url: https://dl.google.com/go/go{{ go_version }}.linux-amd64.tar.gz
+    dest: '{{ ansible_user_dir }}/.dev-sys/go/go{{ go_version }}.linux-amd64.tar.gz'
     mode: u+rw-x,go-rwx
   register: go_status
 
@@ -40,7 +24,7 @@
 
   - name: Installing ...
     unarchive:
-      src: '{{ ansible_env.HOME }}/.dev-sys/go/go{{ go.version }}.linux-amd64.tar.gz'
+      src: '{{ ansible_user_dir }}/.dev-sys/go/go{{ go_version }}.linux-amd64.tar.gz'
       dest: /usr/local
       remote_src: yes
     become: yes
@@ -50,9 +34,9 @@
 - name: Installing the Bash startup script ...
   copy:
     src: .bashrc.d/go-vars.sh
-    dest: '{{ ansible_env.HOME }}/.bashrc.d/go-vars.sh'
+    dest: '{{ ansible_user_dir }}/.bashrc.d/go-vars.sh'
     mode: u+x
 
-- name: Marking the role as executed ...
+- name: Marking the role as evaluated ...
   set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

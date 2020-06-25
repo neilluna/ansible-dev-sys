@@ -5,6 +5,6 @@
     upgrade: safe
   become: yes
 
-- name: Marking the role as executed ...
+- name: Marking the role as evaluated ...
   set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

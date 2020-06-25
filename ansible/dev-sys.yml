@@ -1,81 +1,105 @@
 ---
 - hosts: dev_sys
   vars:
-    roles_already_executed: []
+    roles_evaluated: []
+    python_versions_evaluated: []
 
   roles:
   - role: aws_cli
     tags: aws
-    when: "'aws_cli' not in roles_already_executed"
+    when: "'aws_cli' not in roles_evaluated"
 
   - role: bash_environment
     tags: always
-    when: "'bash_environment' not in roles_already_executed"
+    when: "'bash_environment' not in roles_evaluated"
 
   - role: dev_sys
     tags: always
-    when: "'dev_sys' not in roles_already_executed"
+    when: "'dev_sys' not in roles_evaluated"
 
   - role: docker
     tags: docker
-    when: "'docker' not in roles_already_executed"
+    vars:
+      docker_users:
+        - '{{ ansible_user_id }}'
+    when: "'docker' not in roles_evaluated"
 
   - role: docker_compose
     tags: docker
-    when: "'docker_compose' not in roles_already_executed"
+    vars:
+      docker_compose_version: '1.26.0'
+    when: "'docker_compose' not in roles_evaluated"
 
   - role: git
     tags: git
-    when: "'git' not in roles_already_executed"
+    when: "'git' not in roles_evaluated"
 
   - role: go
     tags: go
-    when: "'go' not in roles_already_executed"
+    vars:
+      go_version: '1.14.4'
+    when: "'go' not in roles_evaluated"
 
   - role: mercurial
     tags: mercurial
-    when: "'mercurial' not in roles_already_executed"
+    vars:
+      mercurial_python_version: '3.7.7'
+    when: "'mercurial' not in roles_evaluated"
 
   - role: mkcert
     tags: mkcert
-    when: "'mkcert' not in roles_already_executed"
+    vars:
+      mkcert_version: '1.4.1'
+    when: "'mkcert' not in roles_evaluated"
 
   - role: nodejs
     tags: nodejs
-    when: "'nodejs' not in roles_already_executed"
+    vars:
+      nodejs_version: '10.17.0'
+    when: "'nodejs' not in roles_evaluated"
 
   - role: nvm
     tags: nvm
-    when: "'nvm' not in roles_already_executed"
+    vars:
+      nvm_version: '0.35.0'
+    when: "'nvm' not in roles_evaluated"
 
   - role: pyenv_environment
     tags: always
-    when: "'pyenv_environment' not in roles_already_executed"
+    when: "'pyenv_environment' not in roles_evaluated"
 
   - role: python
-    tags: python
-    when: "'python' not in roles_already_executed"
+    tags: python2
+    vars:
+      python_version: '2.7.18'
+    when: "'2.7.18' not in python_versions_evaluated"
+
+  - role: python
+    tags: python3
+    vars:
+      python_version: '3.8.3'
+    when: "'3.8.3' not in python_versions_evaluated"
 
   - role: ruby
     tags: ruby
-    when: "'ruby' not in roles_already_executed"
+    when: "'ruby' not in roles_evaluated"
 
   - role: sqlite
     tags: sqlite
-    when: "'sqlite' not in roles_already_executed"
+    when: "'sqlite' not in roles_evaluated"
 
   - role: unzip
     tags: zip
-    when: "'zip' not in roles_already_executed"
+    when: "'zip' not in roles_evaluated"
 
   - role: update
     tags: update
-    when: "'update' not in roles_already_executed"
+    when: "'update' not in roles_evaluated"
 
   - role: upgrade
     tags: upgrade
-    when: "'upgrade' not in roles_already_executed"
+    when: "'upgrade' not in roles_evaluated"
 
   - role: zip
     tags: zip
-    when: "'zip' not in roles_already_executed"
+    when: "'zip' not in roles_evaluated"

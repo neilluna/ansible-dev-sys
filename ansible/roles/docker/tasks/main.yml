@@ -1,20 +1,4 @@
 ---
-- name: Preparing to merge the variables ...
-  set_fact:
-    default_var__to_merge: '{{ docker_defaults | default({}) }}'
-    new_var__to_merge: '{{ docker | default({}) }}'
-
-- name: Merging the variables ...
-  merge_vars:
-    expected_type: dict
-    merged_var_name: merged_var
-    recursive_dict_merge: yes
-    suffix_to_merge: var__to_merge
-
-- name: Saving the merged variables ...
-  set_fact:
-    docker: '{{ merged_var }}'
-
 - name: Adding the apt key ...
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
@@ -25,7 +9,7 @@
     repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
   become: yes
 
-- name: Running apt update ...
+- name: Running apt-get update ...
   apt:
     force_apt_get: yes
     update_cache: yes
@@ -51,9 +35,9 @@
     groups:
     - docker
     append: yes
-  with_items: '{{ docker.users }}'
+  with_items: '{{ docker_users }}'
   become: yes
 
-- name: Marking the role as executed ...
+- name: Marking the role as evaluated ...
   set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

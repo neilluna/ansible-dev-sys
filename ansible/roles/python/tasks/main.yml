@@ -1,26 +1,21 @@
 ---
-- name: Preparing to merge the variables ...
+- name: Checking if version {{ python_version }} is installed ...
+  stat:
+    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ python_version }}"
+  register: python_version_status
+
+- name: Installing version {{ python_version }} ...
+  when: python_version_status.stat.exists == false
+  args:
+    executable: /bin/bash
+  shell: >
+    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
+    pyenv install {{ python_version }}
+
+- name: Marking the Python version as evaluated ...
   set_fact:
-    default_var__to_merge: '{{ python_defaults | default({}) }}'
-    new_var__to_merge: '{{ python | default({}) }}'
+    python_versions_evaluated: "{{ python_versions_evaluated }} + [ '{{ python_version }}' ]"
 
-- name: Merging the variables ...
-  merge_vars:
-    expected_type: dict
-    merged_var_name: merged_var
-    recursive_dict_merge: yes
-    suffix_to_merge: var__to_merge
-
-- name: Saving the merged variables ...
+- name: Marking the role as evaluated ...
   set_fact:
-    python: '{{ merged_var }}'
-
-- name: Installing ...
-  include_tasks: tasks/install_version.yml
-  vars:
-    version: '{{ item }}'
-  with_items: '{{ python.versions }}'
-
-- name: Marking the role as executed ...
-  set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

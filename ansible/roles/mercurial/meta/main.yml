@@ -1,0 +1,6 @@
+---
+dependencies:
+- role: python
+  vars:
+    python_version: '{{ mercurial_python_version }}'
+  when: mercurial_python_version not in python_versions_evaluated

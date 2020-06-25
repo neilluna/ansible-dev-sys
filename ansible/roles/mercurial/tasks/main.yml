@@ -1,11 +1,35 @@
 ---
-- name: Installing ...
-  apt:
-    name: mercurial
-    force_apt_get: yes
-    state: latest
-  become: yes
+- name: Checking if the virtual environment exists ...
+  stat:
+    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ mercurial_python_version }}/envs/mercurial"
+  register: mercurial_python_version_status
 
-- name: Marking the role as executed ...
+- name: Create the virtual environment ...
+  when: mercurial_python_version_status.stat.exists == false
+  args:
+    executable: /bin/bash
+  shell: >
+    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
+    pyenv virtualenv {{ mercurial_python_version }} mercurial
+
+- name: Checking if mercurial is installed ...
+  args:
+    executable: /bin/bash
+  shell: >
+    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
+    PYENV_VERSION=mercurial pip list | awk '$1 == "mercurial"'
+  register: mercurial_check_if_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install ...
+  when: "'mercurial' not in mercurial_check_if_installed.stdout"
+  args:
+    executable: /bin/bash
+  shell: >
+    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
+    PYENV_VERSION=mercurial pip install mercurial
+
+- name: Marking the role as evaluated ...
   set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

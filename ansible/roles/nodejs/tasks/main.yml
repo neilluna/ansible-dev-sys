@@ -1,35 +1,25 @@
 ---
-- name: Preparing to merge the variables ...
-  set_fact:
-    default_var__to_merge: '{{ nodejs_defaults | default({}) }}'
-    new_var__to_merge: '{{ nodejs | default({}) }}'
-
-- name: Merging the variables ...
-  merge_vars:
-    expected_type: dict
-    merged_var_name: merged_var
-    recursive_dict_merge: yes
-    suffix_to_merge: var__to_merge
-
-- name: Saving the merged variables ...
-  set_fact:
-    nodejs: '{{ merged_var }}'
-
 - name: Installing ...
-  shell: bash -c "source ~/.nvm/nvm.sh && nvm install {{ nodejs.version }}"
+  shell: >
+    bash -c "source ~/.nvm/nvm.sh &&
+    nvm install {{ nodejs_version }}"
   register: nvm_installation
   changed_when: "'is already installed.' not in nvm_installation.stderr"
 
 - name: Checking the default version ...
-  shell: bash -c "source ~/.nvm/nvm.sh && nvm ls --no-colors | grep -e 'default -> {{ nodejs.version }}'"
+  shell: >
+    bash -c "source ~/.nvm/nvm.sh &&
+    nvm ls --no-colors | grep -e 'default -> {{ nodejs_version }}'"
   register: nvm_check_for_correct_version
   changed_when: false
   failed_when: false
 
 - name: Setting the default version ...
-  shell: bash -c "source ~/.nvm/nvm.sh && nvm alias default {{ nodejs.version }}"
+  shell: >
+    bash -c "source ~/.nvm/nvm.sh &&
+    nvm alias default {{ nodejs_version }}"
   when: nvm_check_for_correct_version.rc != 0
 
-- name: Marking the role as executed ...
+- name: Marking the role as evaluated ...
   set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

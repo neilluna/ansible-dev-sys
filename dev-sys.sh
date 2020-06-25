@@ -371,26 +371,6 @@ fi
 ansible_assets_dir=${assets_dir}/ansible
 create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_assets_dir}
 
-# Create the Ansible action plugins directory.
-# This is where Ansible action plugins will be stored.
-ansible_action_plugins_dir=${ansible_assets_dir}/action_plugins
-create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_action_plugins_dir}
-
-# Install or update, and configure the ansible-merge-vars plugin.
-if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible-merge-vars"')" ]; then
-	echo_color ${cyan} "Installing ansible_merge_vars ..."
-	retry_if_fail pip install ansible_merge_vars --disable-pip-version-check
-else
-	echo_color ${cyan} "Updating ansible_merge_vars ..."
-	retry_if_fail pip install ansible_merge_vars --disable-pip-version-check --upgrade
-fi
-merge_vars_action_plugin=${ansible_action_plugins_dir}/merge_vars.py
-echo_color ${cyan} "Creating ${merge_vars_action_plugin} ..."
-cat << EOF > ${merge_vars_action_plugin}
-from ansible_merge_vars import ActionModule
-EOF
-chmod ${ASSET_SCRIPT_MODE} ${merge_vars_action_plugin}
-
 # Create the SSH directory.
 dev_sys_ssh_dir=${HOME}/.ssh
 create_dir_with_mode ${ASSET_DIR_MODE} ${dev_sys_ssh_dir}
@@ -482,22 +462,13 @@ echo_color ${cyan} "bash_environment_run_install = ${bash_environment_run_instal
 # Add the bash-environment variables to the Ansible group variables.
 echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
 cat << EOF >> ${ansible_group_vars_file}
-bash_environment:
-  dir: ${BASH_ENVIRONMENT_DIR}
-  managed_externally: ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY}
-  run_install: ${bash_environment_run_install}
+bash_environment_dir: ${BASH_ENVIRONMENT_DIR}
+bash_environment_managed_externally: ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY}
+bash_environment_run_install: ${bash_environment_run_install}
 EOF
 if [ ! -z "${BASH_ENVIRONMENT_VERSION}" ]; then
-	echo "  version: '${BASH_ENVIRONMENT_VERSION}'" >> ${ansible_group_vars_file}
+	echo "bash_environment_version: '${BASH_ENVIRONMENT_VERSION}'" >> ${ansible_group_vars_file}
 fi
-
-# Add the docker variables to the Ansible group variables.
-echo_color ${cyan} "Adding the docker variables to ${ansible_group_vars_file} ..."
-cat << EOF >> ${ansible_group_vars_file}
-docker:
-  users:
-  - $(whoami)
-EOF
 
 # Create the Ansible inventory file.
 ansible_inventory_file=${ansible_inventories_dir}/inventory.ini
@@ -513,7 +484,6 @@ ansible_config_file=${ansible_assets_dir}/ansible.cfg
 echo_color ${cyan} "Creating ${ansible_config_file} ..."
 cat << EOF > ${ansible_config_file}
 [defaults]
-action_plugins = ${ansible_action_plugins_dir}
 force_color = True
 inventory = ${ansible_inventory_file}
 roles_path = ${ANSIBLE_DEV_SYS_DIR}/ansible/roles

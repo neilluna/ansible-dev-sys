@@ -1,4 +1,4 @@
 ---
 dependencies:
 - role: unzip
-  when: "'unzip' not in roles_already_executed"
+  when: "'unzip' not in roles_evaluated"

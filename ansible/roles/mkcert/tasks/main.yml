@@ -1,20 +1,4 @@
 ---
-- name: Preparing to merge the variables ...
-  set_fact:
-    default_var__to_merge: '{{ mkcert_defaults | default({}) }}'
-    new_var__to_merge: '{{ mkcert | default({}) }}'
-
-- name: Merging the variables ...
-  merge_vars:
-    expected_type: dict
-    merged_var_name: merged_var
-    recursive_dict_merge: yes
-    suffix_to_merge: var__to_merge
-
-- name: Saving the merged variables ...
-  set_fact:
-    mkcert: '{{ merged_var }}'
-
 - name: Installing the prerequisites ...
   apt:
     name: libnss3-tools
@@ -24,13 +8,13 @@
 
 - name: Installing ...
   get_url:
-    url: https://github.com/FiloSottile/mkcert/releases/download/v{{ mkcert.version }}/mkcert-v{{ mkcert.version }}-linux-amd64
+    url: https://github.com/FiloSottile/mkcert/releases/download/v{{ mkcert_version }}/mkcert-v{{ mkcert_version }}-linux-amd64
     dest: /usr/local/bin/mkcert
     group: root
     mode: u+rwx,go+rx-w
     owner: root
   become: yes
 
-- name: Marking the role as executed ...
+- name: Marking the role as evaluated ...
   set_fact:
-    roles_already_executed: "{{ roles_already_executed }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

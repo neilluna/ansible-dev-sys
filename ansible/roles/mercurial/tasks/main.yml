@@ -22,7 +22,7 @@
   changed_when: false
   failed_when: false
 
-- name: Install ...
+- name: Installing ...
   when: "'mercurial' not in mercurial_check_if_installed.stdout"
   args:
     executable: /bin/bash

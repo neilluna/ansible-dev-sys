@@ -30,6 +30,10 @@
       docker_compose_version: '1.26.0'
     when: "'docker_compose' not in roles_evaluated"
 
+  - role: fzf
+    tags: fzf
+    when: "'fzf' not in roles_evaluated"
+
   - role: git
     tags: git
     when: "'git' not in roles_evaluated"
@@ -39,6 +43,10 @@
     vars:
       go_version: '1.14.4'
     when: "'go' not in roles_evaluated"
+
+  - role: jq
+    tags: jq
+    when: "'jq' not in roles_evaluated"
 
   - role: mercurial
     tags: mercurial
@@ -99,6 +107,10 @@
   - role: upgrade
     tags: upgrade
     when: "'upgrade' not in roles_evaluated"
+
+  - role: yq
+    tags: yq
+    when: "'yq' not in roles_evaluated"
 
   - role: zip
     tags: zip

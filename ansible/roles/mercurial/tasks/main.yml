@@ -4,7 +4,7 @@
     path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ mercurial_python_version }}/envs/mercurial"
   register: mercurial_python_version_status
 
-- name: Create the virtual environment ...
+- name: Creating the virtual environment ...
   when: mercurial_python_version_status.stat.exists == false
   args:
     executable: /bin/bash

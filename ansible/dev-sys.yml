@@ -30,6 +30,10 @@
       docker_compose_version: '1.26.0'
     when: "'docker_compose' not in roles_evaluated"
 
+  - role: fzf
+    tags: fzf
+    when: "'fzf' not in roles_evaluated"
+
   - role: git
     tags: git
     when: "'git' not in roles_evaluated"

@@ -44,6 +44,10 @@
       go_version: '1.14.4'
     when: "'go' not in roles_evaluated"
 
+  - role: jq
+    tags: jq
+    when: "'jq' not in roles_evaluated"
+
   - role: mercurial
     tags: mercurial
     vars:

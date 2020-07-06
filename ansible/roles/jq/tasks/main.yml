@@ -1,0 +1,11 @@
+---
+- name: Installing ...
+  apt:
+    name: jq
+    force_apt_get: yes
+    state: latest
+  become: yes
+
+- name: Marking the role as evaluated ...
+  set_fact:
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

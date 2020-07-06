@@ -23,16 +23,9 @@
       mode: u+x
 
   - name: Installing ...
-    # shell: '{{ ansible_user_dir }}/.fzf/install --key-bindings --completion --no-update-rc'
     shell: '{{ ansible_user_dir }}/.fzf/install --key-bindings --completion --update-rc'
 
   # End of block: name: Installing or updating ...
-
-# - name: Installing the Bash startup script ...
-#   copy:
-#     src: .bashrc.d/fzf-vars.sh
-#     dest: '{{ ansible_user_dir }}/.bashrc.d/fzf-vars.sh'
-#     mode: u+x
 
 - name: Marking the role as evaluated ...
   set_fact:

@@ -92,6 +92,12 @@
     tags: ruby
     when: "'ruby' not in roles_evaluated"
 
+  - role: sceptre
+    tags: sceptre
+    vars:
+      sceptre_python_version: '3.8.3'
+    when: "'sceptre' not in roles_evaluated"
+
   - role: sqlite
     tags: sqlite
     when: "'sqlite' not in roles_evaluated"

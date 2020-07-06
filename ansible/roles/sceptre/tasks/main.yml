@@ -1,0 +1,35 @@
+---
+- name: Checking if the virtual environment exists ...
+  stat:
+    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ sceptre_python_version }}/envs/sceptre"
+  register: sceptre_python_version_status
+
+- name: Creating the virtual environment ...
+  when: sceptre_python_version_status.stat.exists == false
+  args:
+    executable: /bin/bash
+  shell: >
+    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
+    pyenv virtualenv {{ sceptre_python_version }} sceptre
+
+- name: Checking if sceptre is installed ...
+  args:
+    executable: /bin/bash
+  shell: >
+    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
+    PYENV_VERSION=sceptre pip list | awk '$1 == "sceptre"'
+  register: sceptre_check_if_installed
+  changed_when: false
+  failed_when: false
+
+- name: Installing ...
+  when: "'sceptre' not in sceptre_check_if_installed.stdout"
+  args:
+    executable: /bin/bash
+  shell: >
+    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
+    PYENV_VERSION=sceptre pip install sceptre
+
+- name: Marking the role as evaluated ...
+  set_fact:
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

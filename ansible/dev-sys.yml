@@ -108,6 +108,10 @@
     tags: upgrade
     when: "'upgrade' not in roles_evaluated"
 
+  - role: yq
+    tags: yq
+    when: "'yq' not in roles_evaluated"
+
   - role: zip
     tags: zip
     when: "'zip' not in roles_evaluated"

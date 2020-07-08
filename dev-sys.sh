@@ -41,6 +41,38 @@ function echo_color()
 	echo -e "${color}${message}${reset}"
 }
 
+# Echo an informational message.
+# Usage: echo_info message
+function echo_info()
+{
+	message=${1}
+	echo -e "${cyan}${message}${reset}"
+}
+
+# Echo a warning message.
+# Usage: echo_warning message
+function echo_warning()
+{
+	message=${1}
+	echo -e "${yellow}${message}${reset}"
+}
+
+# Echo an error message.
+# Usage: echo_error message
+function echo_error()
+{
+	message=${1}
+	echo -e "${red}${message}${reset}"
+}
+
+# Echo an error message and exit.
+# Usage: echo_error_and_exit message
+function echo_error_and_exit()
+{
+	echo_error ${1}
+	exit 1
+}
+
 # Create a directory, if it does not exist.
 # If created, then set the mode of the new directory.
 # Usage: create_dir_with_mode mode dir
@@ -49,7 +81,7 @@ function create_dir_with_mode()
 	mode=${1}
 	dir=${2}
 	[ -d ${dir} ] && return
-	echo_color ${cyan} "Creating ${dir} ..."
+	echo_info "Creating ${dir} ..."
 	mkdir -p ${dir}
 	chmod ${mode} ${dir}
 }
@@ -64,7 +96,7 @@ function create_dir_with_mode_user_group()
 	group=${3}
 	dir=${4}
 	[ -d ${dir} ] && return
-	echo_color ${cyan} "Creating ${dir} ..."
+	echo_info "Creating ${dir} ..."
 	sudo mkdir -p ${dir}
 	sudo chmod ${mode} ${dir}
 	sudo chown ${user}:${group} ${dir}
@@ -81,15 +113,14 @@ function retry_if_fail()
 		retry_wait=15
 		retry=1
 		while [ ${retry} -le ${max_retries} ]; do
-			echo_color ${yellow} "- Failed. Will retry in ${retry_wait} seconds ..."
+			echo_warning "'${*}' failed. Will retry in ${retry_wait} seconds."
 			sleep ${retry_wait}
-			echo_color ${cyan} "- Retrying (${retry} of ${max_retries}) ..."
+			echo_info "Retrying '${*}' (${retry} of ${max_retries}) ..."
 			${*} && break
 			retry=$[$retry + 1]
 		done
 		if [ ${retry} -gt ${max_retries} ]; then
-			echo_color ${red} "- Failed."
-			exit 1
+			echo_error_and_exit "'${*}' failed after $[$max_retries + 1] attempts."
 		fi
 	fi
 }
@@ -103,14 +134,14 @@ function add_localhost_to_known_hosts_for_user()
 	users_home_dir=$(eval echo ~${1})
 	users_known_hosts_file=${users_home_dir}/.ssh/known_hosts
 	if [ ! -f ${users_known_hosts_file} ]; then
-		echo_color ${cyan} "Creating ${users_known_hosts_file} ..."
+		echo_info "Creating ${users_known_hosts_file} ..."
 		touch ${users_known_hosts_file}
 		chown ${user}:${user} ${users_known_hosts_file}
 		chmod u+rw-x,go+r-wx ${users_known_hosts_file}
 	fi
 	ssh-keygen -F 127.0.0.1 -f ${users_known_hosts_file} > /dev/null 2>&1
 	if [ ${?} -ne 0 ]; then
-		echo_color ${cyan} "Adding the VM's SSH fingerprint to ${users_known_hosts_file} ..."
+		echo_info "Adding the VM's SSH fingerprint to ${users_known_hosts_file} ..."
 		ssh-keyscan -H 127.0.0.1 >> ${users_known_hosts_file}
 	fi
 }
@@ -167,12 +198,12 @@ while [ ${#} -gt 0 ]; do
 	shift
 done
 
-echo_color ${cyan} "Script: '${script_path}'"
-echo_color ${cyan} "Current user: '$(whoami)', home: '${HOME}'"
-echo_color ${cyan} "Current directory: '$(pwd)'"
+echo_info "Script: '${script_path}'"
+echo_info "Current user: '$(whoami)', home: '${HOME}'"
+echo_info "Current directory: '$(pwd)'"
 
-[ ! -z "${called_from_vagrant_dev_sys}" ] && echo_color ${cyan} "Called from vagrant-dev-sys ..."
-[ ! -z "${called_from_self_update}" ] && echo_color ${cyan} "Called from dev-sys self update ..."
+[ ! -z "${called_from_vagrant_dev_sys}" ] && echo_info "Called from vagrant-dev-sys ..."
+[ ! -z "${called_from_self_update}" ] && echo_info "Called from dev-sys self update ..."
 
 # Make installations non-interactive.
 export DEBIAN_FRONTEND=noninteractive
@@ -189,8 +220,8 @@ ANSIBLE_DEV_SYS_TAGS=always
 dev_sys_vars_script=${assets_dir}/dev-sys-vars.sh
 [ -f ${dev_sys_vars_script} ] && source ${dev_sys_vars_script}
 [ -z "${tags}" ] && tags=${ANSIBLE_DEV_SYS_TAGS}
-echo_color ${cyan} "Ansible tags: ${tags}"
-echo_color ${cyan} "Creating ${dev_sys_vars_script} ..."
+echo_info "Ansible tags: ${tags}"
+echo_info "Creating ${dev_sys_vars_script} ..."
 cat << EOF > ${dev_sys_vars_script}
 #!/usr/bin/env bash
 ANSIBLE_DEV_SYS_TAGS=${tags}
@@ -202,16 +233,16 @@ if [ -z "${called_from_vagrant_dev_sys}" ] && [ -z "${called_from_self_update}" 
 	# Create /opt if it is missing.
 	create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
 
-	echo_color ${cyan} "Running apt-get update ..."
+	echo_info "Running apt-get update ..."
 	retry_if_fail sudo apt-get update --yes
 
-	echo_color ${cyan} "Running apt-get upgrade ..."
+	echo_info "Running apt-get upgrade ..."
 	retry_if_fail sudo apt-get upgrade --yes
 
-	echo_color ${cyan} "Installing or updating software-properties-common ..."
+	echo_info "Installing or updating software-properties-common ..."
 	retry_if_fail sudo apt-get install --yes software-properties-common
 
-	echo_color ${cyan} "Installing or updating git ..."
+	echo_info "Installing or updating git ..."
 	retry_if_fail sudo apt-get install --yes git
 fi
 
@@ -221,7 +252,7 @@ ANSIBLE_DEV_SYS_DIR=${assets_dir}/ansible-dev-sys
 ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY=false
 ansible_dev_sys_vars_script=${assets_dir}/ansible-dev-sys-vars.sh
 if [ -f ${ansible_dev_sys_vars_script} ]; then
-	echo_color ${cyan} "Sourcing ${ansible_dev_sys_vars_script} ..."
+	echo_info "Sourcing ${ansible_dev_sys_vars_script} ..."
 	source ${ansible_dev_sys_vars_script}
 fi
 
@@ -233,11 +264,11 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		# Clone a new copy of ansible-dev-sys.
 		new_ansible_dev_sys_dir=${assets_dir}/new-ansible-dev-sys
 		ansible_dev_sys_url=https://github.com/neilluna/ansible-dev-sys.git
-		echo_color ${cyan} "Cloning ${ansible_dev_sys_url} to ${new_ansible_dev_sys_dir} ..."
+		echo_info "Cloning ${ansible_dev_sys_url} to ${new_ansible_dev_sys_dir} ..."
 		retry_if_fail git clone ${ansible_dev_sys_url} ${new_ansible_dev_sys_dir}
 		cd ${new_ansible_dev_sys_dir}
 		if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
-			echo_color ${cyan} "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
+			echo_info "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
 			git checkout ${ANSIBLE_DEV_SYS_VERSION}
 		fi
 		git config core.filemode false
@@ -245,7 +276,7 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		chmod ${ASSET_SCRIPT_MODE} ${new_dev_sys_script}
 
 		# Create a separate update script.
-		echo_color ${cyan} "Creating ${ansible_dev_sys_update_script} ..."
+		echo_info "Creating ${ansible_dev_sys_update_script} ..."
 		cat <<-EOF > ${ansible_dev_sys_update_script}
 		#!/usr/bin/env bash
 		cd ${HOME}
@@ -266,17 +297,17 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		called_from_self_update=not_blank exec $(which bash) -c "${dev_sys_script}"
 		EOF
 		chmod ${ASSET_SCRIPT_MODE} ${ansible_dev_sys_update_script}
-		echo_color ${cyan} "Executing ${ansible_dev_sys_update_script} ..."
+		echo_info "Executing ${ansible_dev_sys_update_script} ..."
 		exec $(which bash) -c ${ansible_dev_sys_update_script}
 	else
-		echo_color ${cyan} "Removing ${ansible_dev_sys_update_script} ..."
+		echo_info "Removing ${ansible_dev_sys_update_script} ..."
 		rm -f ${ansible_dev_sys_update_script}
 	fi
 fi
 
 # Create a proxy to this script.
 dev_sys_proxy_script=${assets_dir}/dev-sys-proxy.sh
-echo_color ${cyan} "Creating ${dev_sys_proxy_script} ..."
+echo_info "Creating ${dev_sys_proxy_script} ..."
 cat << EOF > ${dev_sys_proxy_script}
 #!/usr/bin/env bash
 dev_sys_script=${script_path}
@@ -292,7 +323,7 @@ BASH_ENVIRONMENT_DIR=${assets_dir}/bash-environment
 BASH_ENVIRONMENT_MANAGED_EXTERNALLY=false
 bash_environment_vars_script=${assets_dir}/bash-environment-vars.sh
 if [ -f ${bash_environment_vars_script} ]; then
-	echo_color ${cyan} "Sourcing ${bash_environment_vars_script} ..."
+	echo_info "Sourcing ${bash_environment_vars_script} ..."
 	source ${bash_environment_vars_script}
 fi
 
@@ -301,7 +332,7 @@ fi
 pyenv_assets_dir=${assets_dir}/pyenv
 create_dir_with_mode ${ASSET_DIR_MODE} ${pyenv_assets_dir}
 if [ -z "${PYENV_ROOT}" ]; then
-	echo_color ${cyan} "Installing the pyenv prerequisites ..."
+	echo_info "Installing the pyenv prerequisites ..."
 	retry_if_fail sudo apt-get install --yes build-essential libssl-dev zlib1g-dev libbz2-dev \
 	libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
 	xz-utils tk-dev libffi-dev liblzma-dev python-openssl git make
@@ -310,16 +341,16 @@ if [ -z "${PYENV_ROOT}" ]; then
 	export PATH=${PYENV_ROOT}/bin:${PATH}
 
 	pyenv_installer_script=${pyenv_assets_dir}/pyenv-installer.sh
-	echo_color ${cyan} "Downloading ${pyenv_installer_script} ..."
+	echo_info "Downloading ${pyenv_installer_script} ..."
 	retry_if_fail curl --silent --show-error https://pyenv.run --output ${pyenv_installer_script}
 	chmod ${ASSET_SCRIPT_MODE} ${pyenv_installer_script}
 
-	echo_color ${cyan} "Installing pyenv ..."
+	echo_info "Installing pyenv ..."
 	${pyenv_installer_script}
 
 	# Create or update the pyenv script for bash-environment.
 	pyenv_vars_script=${pyenv_assets_dir}/pyenv-vars.sh
-	echo_color ${cyan} "Creating ${pyenv_vars_script} ..."
+	echo_info "Creating ${pyenv_vars_script} ..."
 	cat <<-EOF > ${pyenv_vars_script}
 	#!/usr/bin/env bash
 	export PYENV_ROOT="${PYENV_ROOT}"
@@ -331,38 +362,38 @@ if [ -z "${PYENV_ROOT}" ]; then
 	EOF
 	chmod ${ASSET_SCRIPT_MODE} ${pyenv_vars_script}
 
-	echo_color ${cyan} "Sourcing ${pyenv_vars_script} ..."
+	echo_info "Sourcing ${pyenv_vars_script} ..."
 	source ${pyenv_vars_script}
 else
-	echo_color ${cyan} "Updating pyenv ..."
+	echo_info "Updating pyenv ..."
 	retry_if_fail pyenv update
 fi
 
 # Install an isolated instance of Python for use by the dev-sys tools and Ansible.
 python_version=3.8.3
 if [ ! -d ${PYENV_ROOT}/versions/${python_version} ]; then
-	echo_color ${cyan} "Installing Python ${python_version} for the dev-sys Python virtual environment ..."
+	echo_info "Installing Python ${python_version} for the dev-sys Python virtual environment ..."
 	retry_if_fail pyenv install ${python_version}
 fi
 
 # Create or replace the dev-sys Python virtual environment.
 if [ ! -d ${PYENV_ROOT}/versions/${python_version}/envs/dev-sys ]; then
 	if [ ! -z "$(pyenv virtualenvs | awk '/^\*? +/ && ($1 == "*" ? $2 : $1) == "dev-sys"')" ]; then
-		echo_color ${cyan} "Removing the old dev-sys Python virtual environment ..."
+		echo_info "Removing the old dev-sys Python virtual environment ..."
 		pyenv virtualenv-delete --force dev-sys
 	fi
-	echo_color ${cyan} "Creating the dev-sys Python virtual environment ..."
+	echo_info "Creating the dev-sys Python virtual environment ..."
 	pyenv virtualenv ${python_version} dev-sys
 fi
-echo_color ${cyan} "Activating the dev-sys Python virtual environment ..."
+echo_info "Activating the dev-sys Python virtual environment ..."
 export PYENV_VERSION=dev-sys 
 
 # Install or update Ansible.
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
-	echo_color ${cyan} "Installing Ansible ..."
+	echo_info "Installing Ansible ..."
 	retry_if_fail pip install ansible --disable-pip-version-check
 else
-	echo_color ${cyan} "Updating Ansible ..."
+	echo_info "Updating Ansible ..."
 	retry_if_fail pip install ansible --upgrade --disable-pip-version-check
 fi
 
@@ -380,7 +411,7 @@ dev_sys_ssh_key_basename=id_dev-sys
 dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_basename}
 dev_sys_ssh_public_key_file=${dev_sys_ssh_private_key_file}.pub
 if [ ! -f ${dev_sys_ssh_private_key_file} ]; then
-	echo_color ${cyan} "Creating new SSH keys for dev-sys use ..."
+	echo_info "Creating new SSH keys for dev-sys use ..."
 	ssh-keygen -C ${dev_sys_ssh_key_basename} -f ${dev_sys_ssh_private_key_file} -N ""
 	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_private_key_file}
 	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_public_key_file}
@@ -393,7 +424,7 @@ if [ ! -f ${dev_sys_authorized_keys_file} ]; then
 fi
 grep -Fx "${dev_sys_ssh_public_key_contents}" ${dev_sys_authorized_keys_file} > /dev/null
 if [ ${?} -ne 0 ]; then
-	echo_color ${cyan} "Adding the dev-sys SSH public key to ${dev_sys_authorized_keys_file} ..."
+	echo_info "Adding the dev-sys SSH public key to ${dev_sys_authorized_keys_file} ..."
 	echo "${dev_sys_ssh_public_key_contents}" >> ${dev_sys_authorized_keys_file}
 fi
 add_localhost_to_known_hosts_for_user $(whoami)
@@ -406,7 +437,7 @@ create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_inventories_dir}
 ansible_host_vars_dir=${ansible_inventories_dir}/host_vars
 create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_host_vars_dir}
 ansible_host_vars_file=${ansible_host_vars_dir}/$(hostname).yml
-echo_color ${cyan} "Creating ${ansible_host_vars_file} ..."
+echo_info "Creating ${ansible_host_vars_file} ..."
 cat << EOF > ${ansible_host_vars_file}
 ---
 ansible_connection: ssh
@@ -421,7 +452,7 @@ chmod ${ASSET_FILE_MODE} ${ansible_host_vars_file}
 ansible_group_vars_dir=${ansible_inventories_dir}/group_vars
 create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_group_vars_dir}
 ansible_group_vars_file=${ansible_group_vars_dir}/dev_sys.yml
-echo_color ${cyan} "Creating ${ansible_group_vars_file} ..."
+echo_info "Creating ${ansible_group_vars_file} ..."
 cat << EOF > ${ansible_group_vars_file}
 ---
 EOF
@@ -436,12 +467,12 @@ chmod ${ASSET_FILE_MODE} ${ansible_group_vars_file}
 bash_environment_run_install=false
 if [ ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY} == true ]; then
 	cd ${BASH_ENVIRONMENT_DIR}
-	echo_color ${cyan} "Computing the hash of ${BASH_ENVIRONMENT_DIR} ..."
+	echo_info "Computing the hash of ${BASH_ENVIRONMENT_DIR} ..."
 	bash_environment_hash=$(find . -type f | sort | xargs sha1sum | sha1sum | awk '{ print $1}')
 
 	bash_environment_previous_hash_script=${assets_dir}/bash-environment-previous-hash.sh
 	if [ -f ${bash_environment_previous_hash_script} ]; then
-		echo_color ${cyan} "Sourcing ${bash_environment_previous_hash_script} ..."
+		echo_info "Sourcing ${bash_environment_previous_hash_script} ..."
 		source ${bash_environment_previous_hash_script}
 		if [ "${bash_environment_hash}" != "${bash_environment_previous_hash}" ]; then
 			bash_environment_run_install=true
@@ -450,17 +481,17 @@ if [ ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY} == true ]; then
 		bash_environment_run_install=true
 	fi
 
-	echo_color ${cyan} "Creating ${bash_environment_previous_hash_script} ..."
+	echo_info "Creating ${bash_environment_previous_hash_script} ..."
 	cat <<-EOF > ${bash_environment_previous_hash_script}
 	#!/usr/bin/env bash
 	bash_environment_previous_hash=${bash_environment_hash}
 	EOF
 	chmod ${ASSET_SCRIPT_MODE} ${bash_environment_previous_hash_script}
 fi
-echo_color ${cyan} "bash_environment_run_install = ${bash_environment_run_install}"
+echo_info "bash_environment_run_install = ${bash_environment_run_install}"
 
 # Add the bash-environment variables to the Ansible group variables.
-echo_color ${cyan} "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
+echo_info "Adding the bash-environment variables to ${ansible_group_vars_file} ..."
 cat << EOF >> ${ansible_group_vars_file}
 bash_environment_dir: ${BASH_ENVIRONMENT_DIR}
 bash_environment_managed_externally: ${BASH_ENVIRONMENT_MANAGED_EXTERNALLY}
@@ -472,7 +503,7 @@ fi
 
 # Create the Ansible inventory file.
 ansible_inventory_file=${ansible_inventories_dir}/inventory.ini
-echo_color ${cyan} "Creating ${ansible_inventory_file} ..."
+echo_info "Creating ${ansible_inventory_file} ..."
 cat << EOF > ${ansible_inventory_file}
 [dev_sys]
 $(hostname)
@@ -481,7 +512,7 @@ chmod ${ASSET_FILE_MODE} ${ansible_inventory_file}
 
 # Create the Ansible configuration file.
 ansible_config_file=${ansible_assets_dir}/ansible.cfg
-echo_color ${cyan} "Creating ${ansible_config_file} ..."
+echo_info "Creating ${ansible_config_file} ..."
 cat << EOF > ${ansible_config_file}
 [defaults]
 force_color = True
@@ -492,7 +523,7 @@ chmod ${ASSET_FILE_MODE} ${ansible_config_file}
 export ANSIBLE_CONFIG=${ansible_config_file}
 
 ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
-echo_color ${cyan} "Running Ansible with tags '${tags}' ..."
+echo_info "Running Ansible with tags '${tags}' ..."
 ansible-playbook ${ansible_playbook_dir}/dev-sys.yml --tags ${tags} || exit 1
 
 exit 0

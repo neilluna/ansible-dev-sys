@@ -102,6 +102,18 @@ function create_dir_with_mode_user_group()
 	sudo chown ${user}:${group} ${dir}
 }
 
+# Check if a program exists and is executable by this user.
+# Echoes an error message and exits the script if the program does not exist or is not executable by this user.
+# Usage: check_program program
+function check_program()
+{
+	program=${1}
+	full_path=$(which ${program})
+	if [ -z "${full_path}" ] || [ ! -x "${full_path}" ]; then
+		echo_error_and_exit "Cannot execute '${program}'."
+	fi
+}
+
 # Attempt a command up to four times; one initial attempt followed by three reties.
 # Attempts are spaced 15 seconds apart.
 # Usage: retry_if_fail command args
@@ -210,6 +222,10 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Do not buffer Python stdout.
 export PYTHONUNBUFFERED=TRUE
+
+echo_info "Checking dependencies ..."
+check_program ssh-keygen
+check_program ssh-keyscan
 
 # Create the provisioning assets directory.
 assets_dir=${HOME}/.dev-sys

@@ -188,27 +188,31 @@ export DEBIAN_FRONTEND=noninteractive
 # Do not buffer Python stdout.
 export PYTHONUNBUFFERED=TRUE
 
-echo_info "Checking dependencies ..."
-check_program ssh
-check_program ssh-keygen
-check_program ssh-keyscan
-
-# Create the provisioning assets directory.
+# The dev-sys assets directory.
 assets_dir=${HOME}/.dev-sys
-create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
 
-# Determine the Ansible tags to be used, and save them for later invocations.
+# Determine the Ansible tags to be used.
 ANSIBLE_DEV_SYS_TAGS=always
 dev_sys_vars_script=${assets_dir}/dev-sys-vars.sh
 [ -f ${dev_sys_vars_script} ] && source ${dev_sys_vars_script}
 [ -z "${tags}" ] && tags=${ANSIBLE_DEV_SYS_TAGS}
 echo_info "Ansible tags: ${tags}"
+
+# Create the dev-sys assets directory.
+create_dir_with_mode ${ASSET_DIR_MODE} ${assets_dir}
+
+# Save the Ansible tags.
 echo_info "Creating ${dev_sys_vars_script} ..."
 cat << EOF > ${dev_sys_vars_script}
 #!/usr/bin/env bash
 ANSIBLE_DEV_SYS_TAGS=${tags}
 EOF
 chmod ${ASSET_SCRIPT_MODE} ${dev_sys_vars_script}
+
+echo_info "Checking dependencies ..."
+check_program ssh
+check_program ssh-keygen
+check_program ssh-keyscan
 
 # Create the SSH directory.
 ssh_dir=${HOME}/.ssh

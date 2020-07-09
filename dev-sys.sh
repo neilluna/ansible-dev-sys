@@ -189,6 +189,7 @@ export DEBIAN_FRONTEND=noninteractive
 export PYTHONUNBUFFERED=TRUE
 
 echo_info "Checking dependencies ..."
+check_program ssh
 check_program ssh-keygen
 check_program ssh-keyscan
 
@@ -208,6 +209,49 @@ cat << EOF > ${dev_sys_vars_script}
 ANSIBLE_DEV_SYS_TAGS=${tags}
 EOF
 chmod ${ASSET_SCRIPT_MODE} ${dev_sys_vars_script}
+
+# Create the SSH directory.
+ssh_dir=${HOME}/.ssh
+create_dir_with_mode ${ASSET_DIR_MODE} ${ssh_dir}
+
+# Create the SSH keys used to run commands as the dev-sys user.
+dev_sys_ssh_key_basename=id_dev-sys
+dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_basename}
+dev_sys_ssh_public_key_file=${assets_dir}/${dev_sys_ssh_key_basename}.pub
+if [ ! -f ${dev_sys_ssh_private_key_file} ]; then
+	echo_info "Creating new SSH keys for dev-sys use ..."
+	ssh-keygen -C ${dev_sys_ssh_key_basename} -f ${dev_sys_ssh_private_key_file} -N ""
+	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_private_key_file}
+	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_public_key_file}
+fi
+dev_sys_ssh_public_key_contents=$(cat ${dev_sys_ssh_public_key_file})
+ssh_authorized_keys_file=${ssh_dir}/authorized_keys
+if [ ! -f ${ssh_authorized_keys_file} ]; then
+	touch ${ssh_authorized_keys_file}
+	chmod ${ASSET_FILE_MODE} ${ssh_authorized_keys_file}
+fi
+grep -Fx "${dev_sys_ssh_public_key_contents}" ${ssh_authorized_keys_file} > /dev/null
+if [ ${?} -ne 0 ]; then
+	echo_info "Adding the dev-sys SSH public key to ${ssh_authorized_keys_file} ..."
+	echo "${dev_sys_ssh_public_key_contents}" >> ${ssh_authorized_keys_file}
+fi
+
+# Adds 127.0.0.1 to the known_hosts file.
+# This will avoid prompts when Ansible uses SSH to provison the local host.
+ssh_known_hosts_file=${ssh_dir}/known_hosts
+if [ ! -f ${ssh_known_hosts_file} ]; then
+	echo_info "Creating ${ssh_known_hosts_file} ..."
+	touch ${ssh_known_hosts_file}
+	chmod u+rw-x,go+r-wx ${ssh_known_hosts_file}
+fi
+ssh-keygen -F 127.0.0.1 -f ${ssh_known_hosts_file} > /dev/null 2>&1
+if [ ${?} -ne 0 ]; then
+	echo_info "Adding the local host's SSH fingerprint to ${ssh_known_hosts_file} ..."
+	ssh-keyscan -H 127.0.0.1 >> ${ssh_known_hosts_file} || exit 1
+fi
+
+echo_info "Checking SSH connectivity to the local host ..."
+ssh $(whoami)@127.0.0.1 -i ${dev_sys_ssh_private_key_file} echo Ok || exit 1
 
 echo_info "Running apt-get update ..."
 retry_if_fail sudo apt-get update --yes
@@ -382,46 +426,6 @@ fi
 # This is where Ansible-related files will be stored.
 ansible_assets_dir=${assets_dir}/ansible
 create_dir_with_mode ${ASSET_DIR_MODE} ${ansible_assets_dir}
-
-# Create the SSH directory.
-dev_sys_ssh_dir=${HOME}/.ssh
-create_dir_with_mode ${ASSET_DIR_MODE} ${dev_sys_ssh_dir}
-
-# Create the SSH keys used to run commands as the dev-sys user.
-dev_sys_ssh_key_basename=id_dev-sys
-dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_basename}
-dev_sys_ssh_public_key_file=${dev_sys_ssh_private_key_file}.pub
-if [ ! -f ${dev_sys_ssh_private_key_file} ]; then
-	echo_info "Creating new SSH keys for dev-sys use ..."
-	ssh-keygen -C ${dev_sys_ssh_key_basename} -f ${dev_sys_ssh_private_key_file} -N ""
-	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_private_key_file}
-	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_public_key_file}
-fi
-dev_sys_ssh_public_key_contents=$(cat ${dev_sys_ssh_public_key_file})
-dev_sys_authorized_keys_file=${dev_sys_ssh_dir}/authorized_keys
-if [ ! -f ${dev_sys_authorized_keys_file} ]; then
-	touch ${dev_sys_authorized_keys_file}
-	chmod ${ASSET_FILE_MODE} ${dev_sys_authorized_keys_file}
-fi
-grep -Fx "${dev_sys_ssh_public_key_contents}" ${dev_sys_authorized_keys_file} > /dev/null
-if [ ${?} -ne 0 ]; then
-	echo_info "Adding the dev-sys SSH public key to ${dev_sys_authorized_keys_file} ..."
-	echo "${dev_sys_ssh_public_key_contents}" >> ${dev_sys_authorized_keys_file}
-fi
-
-# Adds 127.0.0.1 to the known_hosts file.
-# This will avoid prompts when Ansible uses SSH to provison the local host.
-users_known_hosts_file=${dev_sys_ssh_dir}/known_hosts
-if [ ! -f ${users_known_hosts_file} ]; then
-	echo_info "Creating ${users_known_hosts_file} ..."
-	touch ${users_known_hosts_file}
-	chmod u+rw-x,go+r-wx ${users_known_hosts_file}
-fi
-ssh-keygen -F 127.0.0.1 -f ${users_known_hosts_file} > /dev/null 2>&1
-if [ ${?} -ne 0 ]; then
-	echo_info "Adding the local host's SSH fingerprint to ${users_known_hosts_file} ..."
-	ssh-keyscan -H 127.0.0.1 >> ${users_known_hosts_file} || exit 1
-fi
 
 # Create the Ansible inventories directory.
 ansible_inventories_dir=${ansible_assets_dir}/inventories

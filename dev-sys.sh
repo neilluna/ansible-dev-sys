@@ -86,22 +86,6 @@ function create_dir_with_mode()
 	chmod ${mode} ${dir}
 }
 
-# Create a directory, if it does not exist.
-# If created, then set the mode, user, and group of the new directory.
-# Usage: create_dir_with_mode_user_group mode user group dir
-function create_dir_with_mode_user_group()
-{
-	mode=${1}
-	user=${2}
-	group=${3}
-	dir=${4}
-	[ -d ${dir} ] && return
-	echo_info "Creating ${dir} ..."
-	sudo mkdir -p ${dir}
-	sudo chmod ${mode} ${dir}
-	sudo chown ${user}:${group} ${dir}
-}
-
 # Check if a program exists and is executable by this user.
 # Echoes an error message and exits the script if the program does not exist or is not executable by this user.
 # Usage: check_program program
@@ -110,7 +94,7 @@ function check_program()
 	program=${1}
 	full_path=$(which ${program})
 	if [ -z "${full_path}" ] || [ ! -x "${full_path}" ]; then
-		echo_error_and_exit "Cannot execute '${program}'."
+		echo_error_and_exit "Cannot execute ${program}"
 	fi
 }
 
@@ -137,28 +121,9 @@ function retry_if_fail()
 	fi
 }
 
-# Adds 127.0.0.1 to the known_hosts file for the specified user.
-# Used to avoid prompts when Ansible uses SSH to provison the local host.
-# Usage: add_localhost_to_known_hosts_for_user user
-function add_localhost_to_known_hosts_for_user()
-{
-	user=${1}
-	users_home_dir=$(eval echo ~${1})
-	users_known_hosts_file=${users_home_dir}/.ssh/known_hosts
-	if [ ! -f ${users_known_hosts_file} ]; then
-		echo_info "Creating ${users_known_hosts_file} ..."
-		touch ${users_known_hosts_file}
-		chown ${user}:${user} ${users_known_hosts_file}
-		chmod u+rw-x,go+r-wx ${users_known_hosts_file}
-	fi
-	ssh-keygen -F 127.0.0.1 -f ${users_known_hosts_file} > /dev/null 2>&1
-	if [ ${?} -ne 0 ]; then
-		echo_info "Adding the VM's SSH fingerprint to ${users_known_hosts_file} ..."
-		ssh-keyscan -H 127.0.0.1 >> ${users_known_hosts_file}
-	fi
-}
-
-# Provision directory and file modes. Keeps things private.
+# Provision directory and file modes.
+# Keeps things very private.
+# Along with other things, these modes are also used for private keys and credentials.
 ASSET_DIR_MODE=u+rwx,go-rwx
 ASSET_FILE_MODE=u+rw-x,go-rwx
 ASSET_SCRIPT_MODE=u+rwx,go-rwx
@@ -173,7 +138,7 @@ verbose=no
 
 # NOTE: This requires GNU getopt. On Mac OS X and FreeBSD, you have to install this separately.
 ARGS=$(getopt -o hv -l help,verbose,version -n ${script_name} -- "${@}")
-if [ ${?} != 0 ]; then
+if [ ${?} -ne 0 ]; then
 	exit 1
 fi
 
@@ -214,7 +179,6 @@ echo_info "Script: '${script_path}'"
 echo_info "Current user: '$(whoami)', home: '${HOME}'"
 echo_info "Current directory: '$(pwd)'"
 
-[ ! -z "${called_from_vagrant_dev_sys}" ] && echo_info "Called from vagrant-dev-sys ..."
 [ ! -z "${called_from_self_update}" ] && echo_info "Called from dev-sys self update ..."
 
 # Make installations non-interactive.
@@ -244,23 +208,17 @@ ANSIBLE_DEV_SYS_TAGS=${tags}
 EOF
 chmod ${ASSET_SCRIPT_MODE} ${dev_sys_vars_script}
 
-# No need to run these steps if this script was run from vagrant-dev-sys or as a rerun after a dev-sys.sh update.
-if [ -z "${called_from_vagrant_dev_sys}" ] && [ -z "${called_from_self_update}" ]; then
-	# Create /opt if it is missing.
-	create_dir_with_mode_user_group u+rwx,go+rx-w ${ROOT_UID} ${ROOT_GID} /opt
+echo_info "Running apt-get update ..."
+retry_if_fail sudo apt-get update --yes
 
-	echo_info "Running apt-get update ..."
-	retry_if_fail sudo apt-get update --yes
+echo_info "Running apt-get upgrade ..."
+retry_if_fail sudo apt-get upgrade --yes
 
-	echo_info "Running apt-get upgrade ..."
-	retry_if_fail sudo apt-get upgrade --yes
+echo_info "Installing or updating software-properties-common ..."
+retry_if_fail sudo apt-get install --yes software-properties-common
 
-	echo_info "Installing or updating software-properties-common ..."
-	retry_if_fail sudo apt-get install --yes software-properties-common
-
-	echo_info "Installing or updating git ..."
-	retry_if_fail sudo apt-get install --yes git
-fi
+echo_info "Installing or updating git ..."
+retry_if_fail sudo apt-get install --yes git
 
 # ansible-dev-sys: Where is it, and is it being managed by an external process?
 # If ansible-dev-sys is being managed by an external process, then this script will not update it.
@@ -285,7 +243,7 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		cd ${new_ansible_dev_sys_dir}
 		if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
 			echo_info "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
-			git checkout ${ANSIBLE_DEV_SYS_VERSION}
+			git checkout ${ANSIBLE_DEV_SYS_VERSION} || exit 1
 		fi
 		git config core.filemode false
 		new_dev_sys_script=${new_ansible_dev_sys_dir}/dev-sys.sh
@@ -361,6 +319,10 @@ if [ -z "${PYENV_ROOT}" ]; then
 	retry_if_fail curl --silent --show-error https://pyenv.run --output ${pyenv_installer_script}
 	chmod ${ASSET_SCRIPT_MODE} ${pyenv_installer_script}
 
+	# Unfortunately, due to the way this installation script works,
+	# it will not return an error code if something goes wrong.
+	# This means that prefixing it with 'retry_if_fail' does no good.
+	# The best that we can do is to run pyenv doctor after the installation.
 	echo_info "Installing pyenv ..."
 	${pyenv_installer_script}
 
@@ -380,6 +342,9 @@ if [ -z "${PYENV_ROOT}" ]; then
 
 	echo_info "Sourcing ${pyenv_vars_script} ..."
 	source ${pyenv_vars_script}
+
+	echo_info "Checking pyenv ..."
+	pyenv doctor --cpython || exit 1
 else
 	echo_info "Updating pyenv ..."
 	retry_if_fail pyenv update
@@ -443,7 +408,20 @@ if [ ${?} -ne 0 ]; then
 	echo_info "Adding the dev-sys SSH public key to ${dev_sys_authorized_keys_file} ..."
 	echo "${dev_sys_ssh_public_key_contents}" >> ${dev_sys_authorized_keys_file}
 fi
-add_localhost_to_known_hosts_for_user $(whoami)
+
+# Adds 127.0.0.1 to the known_hosts file.
+# This will avoid prompts when Ansible uses SSH to provison the local host.
+users_known_hosts_file=${dev_sys_ssh_dir}/known_hosts
+if [ ! -f ${users_known_hosts_file} ]; then
+	echo_info "Creating ${users_known_hosts_file} ..."
+	touch ${users_known_hosts_file}
+	chmod u+rw-x,go+r-wx ${users_known_hosts_file}
+fi
+ssh-keygen -F 127.0.0.1 -f ${users_known_hosts_file} > /dev/null 2>&1
+if [ ${?} -ne 0 ]; then
+	echo_info "Adding the local host's SSH fingerprint to ${users_known_hosts_file} ..."
+	ssh-keyscan -H 127.0.0.1 >> ${users_known_hosts_file} || exit 1
+fi
 
 # Create the Ansible inventories directory.
 ansible_inventories_dir=${ansible_assets_dir}/inventories

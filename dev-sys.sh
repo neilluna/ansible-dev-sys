@@ -516,8 +516,7 @@ EOF
 chmod ${ASSET_FILE_MODE} ${ansible_config_file}
 export ANSIBLE_CONFIG=${ansible_config_file}
 
-ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
 echo_info "Running the Ansible playbook ..."
-ansible-playbook ${ansible_playbook_dir}/dev-sys.yml --tags ${tags} || exit 1
+ansible-playbook ${ANSIBLE_DEV_SYS_DIR}/ansible/dev-sys.yml --tags ${tags} || exit 1
 
 exit 0

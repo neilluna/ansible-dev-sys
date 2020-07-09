@@ -69,7 +69,7 @@ function echo_error()
 # Usage: echo_error_and_exit message
 function echo_error_and_exit()
 {
-	echo_error ${1}
+	echo_error "${1}"
 	exit 1
 }
 

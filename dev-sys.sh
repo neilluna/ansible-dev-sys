@@ -94,7 +94,7 @@ function check_program()
 	program=${1}
 	full_path=$(which ${program})
 	if [ -z "${full_path}" ] || [ ! -x "${full_path}" ]; then
-		echo_error_and_exit "Cannot execute ${program}"
+		echo_error_and_exit "Cannot execute '${program}'."
 	fi
 }
 
@@ -175,9 +175,10 @@ while [ ${#} -gt 0 ]; do
 	shift
 done
 
-echo_info "Script: '${script_path}'"
-echo_info "Current user: '$(whoami)', home: '${HOME}'"
-echo_info "Current directory: '$(pwd)'"
+echo_info "Script: ${script_path}"
+echo_info "Current user: $(whoami)"
+echo_info "Home directory: ${HOME}"
+echo_info "Current directory: $(pwd)"
 
 [ ! -z "${called_from_self_update}" ] && echo_info "Called from dev-sys self update ..."
 
@@ -242,7 +243,7 @@ if [ ${ANSIBLE_DEV_SYS_MANAGED_EXTERNALLY} == false ]; then
 		retry_if_fail git clone ${ansible_dev_sys_url} ${new_ansible_dev_sys_dir}
 		cd ${new_ansible_dev_sys_dir}
 		if [ ! -z "${ANSIBLE_DEV_SYS_VERSION}" ]; then
-			echo_info "Switching to branch '${ANSIBLE_DEV_SYS_VERSION}' ..."
+			echo_info "Switching to branch ${ANSIBLE_DEV_SYS_VERSION} ..."
 			git checkout ${ANSIBLE_DEV_SYS_VERSION} || exit 1
 		fi
 		git config core.filemode false
@@ -319,8 +320,7 @@ if [ -z "${PYENV_ROOT}" ]; then
 	retry_if_fail curl --silent --show-error https://pyenv.run --output ${pyenv_installer_script}
 	chmod ${ASSET_SCRIPT_MODE} ${pyenv_installer_script}
 
-	# Unfortunately, due to the way this installation script works,
-	# it will not return an error code if something goes wrong.
+	# Unfortunately, the pyenv installation script may not return an error code if something goes wrong.
 	# This means that prefixing it with 'retry_if_fail' does no good.
 	# The best that we can do is to run pyenv doctor after the installation.
 	echo_info "Installing pyenv ..."
@@ -517,7 +517,7 @@ chmod ${ASSET_FILE_MODE} ${ansible_config_file}
 export ANSIBLE_CONFIG=${ansible_config_file}
 
 ansible_playbook_dir=${ANSIBLE_DEV_SYS_DIR}/ansible
-echo_info "Running Ansible with tags '${tags}' ..."
+echo_info "Running the Ansible playbook ..."
 ansible-playbook ${ansible_playbook_dir}/dev-sys.yml --tags ${tags} || exit 1
 
 exit 0

@@ -223,7 +223,7 @@ dev_sys_ssh_key_basename=id_dev-sys
 dev_sys_ssh_private_key_file=${assets_dir}/${dev_sys_ssh_key_basename}
 dev_sys_ssh_public_key_file=${assets_dir}/${dev_sys_ssh_key_basename}.pub
 if [ ! -f ${dev_sys_ssh_private_key_file} ]; then
-	echo_info "Creating new SSH keys for dev-sys use ..."
+	echo_info "Creating new SSH keys for use by dev-sys ..."
 	ssh-keygen -C ${dev_sys_ssh_key_basename} -f ${dev_sys_ssh_private_key_file} -N ""
 	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_private_key_file}
 	chmod ${ASSET_FILE_MODE} ${dev_sys_ssh_public_key_file}

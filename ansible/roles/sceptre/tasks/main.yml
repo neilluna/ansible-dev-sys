@@ -1,34 +1,34 @@
 ---
 - name: Checking if the virtual environment exists ...
   stat:
-    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ mercurial_python_version }}/envs/mercurial"
-  register: mercurial_python_version_status
+    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ sceptre_python_version }}/envs/sceptre"
+  register: sceptre_python_version_status
 
 - name: Creating the virtual environment ...
-  when: mercurial_python_version_status.stat.exists == false
+  when: sceptre_python_version_status.stat.exists == false
   args:
     executable: /bin/bash
   shell: >
     source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
-    pyenv virtualenv {{ mercurial_python_version }} mercurial
+    pyenv virtualenv {{ sceptre_python_version }} sceptre
 
-- name: Checking if mercurial is installed ...
+- name: Checking if sceptre is installed ...
   args:
     executable: /bin/bash
   shell: >
     source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
-    PYENV_VERSION=mercurial pip list | awk '$1 == "mercurial"'
-  register: mercurial_check_if_installed
+    PYENV_VERSION=sceptre pip list | awk '$1 == "sceptre"'
+  register: sceptre_check_if_installed
   changed_when: false
   failed_when: false
 
 - name: Installing ...
-  when: "'mercurial' not in mercurial_check_if_installed.stdout"
+  when: "'sceptre' not in sceptre_check_if_installed.stdout"
   args:
     executable: /bin/bash
   shell: >
     source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
-    PYENV_VERSION=mercurial pip install mercurial
+    PYENV_VERSION=sceptre pip install sceptre
 
 - name: Marking the role as evaluated ...
   set_fact:

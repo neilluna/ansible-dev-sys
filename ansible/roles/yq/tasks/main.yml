@@ -1,0 +1,28 @@
+---
+- name: Adding the apt key ...
+  apt_key:
+    id: CC86BB64
+    keyserver: keyserver.ubuntu.com
+  become: yes
+
+- name: Adding the apt repository ...
+  apt_repository:
+    repo: ppa:rmescandon/yq
+  become: yes
+
+- name: Running apt-get update ...
+  apt:
+    force_apt_get: yes
+    update_cache: yes
+  become: yes
+
+- name: Installing or updating ...
+  apt:
+    name: yq
+    force_apt_get: yes
+    state: latest
+  become: yes
+
+- name: Marking the role as evaluated ...
+  set_fact:
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

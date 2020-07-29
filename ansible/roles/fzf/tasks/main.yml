@@ -1,0 +1,32 @@
+---
+- name: Cloning or updating the repository ...
+  git:
+    repo: https://github.com/junegunn/fzf.git
+    dest: '{{ ansible_user_dir }}/.fzf'
+  register: fzf_git_status
+
+- name: Installing or updating ...
+  when: fzf_git_status.before != fzf_git_status.after
+  block:
+
+  - name: Setting the local core filemode ...
+    git_config:
+      name: core.filemode
+      repo: '{{ ansible_user_dir }}/.fzf'
+      scope: local
+      value: 'false'
+
+  - name: Making install executable ...
+    file:
+      path: '{{ ansible_user_dir }}/.fzf/install'
+      state: file
+      mode: u+x
+
+  - name: Installing ...
+    shell: '{{ ansible_user_dir }}/.fzf/install --key-bindings --completion --update-rc'
+
+  # End of block: name: Installing or updating ...
+
+- name: Marking the role as evaluated ...
+  set_fact:
+    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"

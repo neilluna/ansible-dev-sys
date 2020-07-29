@@ -10,15 +10,10 @@
   set_fact:
     run_install: '{{ bash_environment_git_status.before != bash_environment_git_status.after }}'
 
-- name: Installing or updating ...
+- name: Setting the local core filemode ...
   when: run_install == true
-  block:
-
-  - name: Setting the local core filemode ...
-    git_config:
-      name: core.filemode
-      repo: '{{ bash_environment_dir }}'
-      scope: local
-      value: 'false'
-
-  # End of block: name: Installing or updating ...
+  git_config:
+    name: core.filemode
+    repo: '{{ bash_environment_dir }}'
+    scope: local
+    value: 'false'

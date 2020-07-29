@@ -1,0 +1,6 @@
+---
+dependencies:
+- role: python
+  vars:
+    python_version: '{{ sceptre_python_version }}'
+  when: sceptre_python_version not in python_versions_evaluated

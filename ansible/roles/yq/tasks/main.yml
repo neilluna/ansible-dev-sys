@@ -2,7 +2,7 @@
 - name: Adding the apt key ...
   apt_key:
     id: CC86BB64
-    keyserver: keyserver.ubuntu.com
+    keyserver: hkp://keyserver.ubuntu.com:80
   become: yes
 
 - name: Adding the apt repository ...

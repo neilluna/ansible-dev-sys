@@ -9,12 +9,6 @@
     repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
   become: yes
 
-- name: Running apt-get update ...
-  apt:
-    force_apt_get: yes
-    update_cache: yes
-  become: yes
-
 - name: Installing or updating ...
   apt:
     name: docker-ce

@@ -405,6 +405,7 @@ python_version=3.8.3
 if [ ! -d ${PYENV_ROOT}/versions/${python_version} ]; then
 	echo_info "Installing Python ${python_version} for the dev-sys Python virtual environment ..."
 	retry_if_fail pyenv install ${python_version}
+	pyenv rehash
 fi
 
 # Create or replace the dev-sys Python virtual environment.
@@ -423,9 +424,11 @@ export PYENV_VERSION=dev-sys
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
 	echo_info "Installing Ansible ..."
 	retry_if_fail pip install ansible --disable-pip-version-check
+	pyenv rehash
 else
 	echo_info "Updating Ansible ..."
 	retry_if_fail pip install ansible --upgrade --disable-pip-version-check
+	pyenv rehash
 fi
 
 # Create the Ansible provisioning directory.

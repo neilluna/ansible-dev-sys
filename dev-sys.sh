@@ -257,6 +257,13 @@ fi
 echo_info "Checking SSH connectivity to the local host ..."
 ssh $(whoami)@127.0.0.1 -i ${dev_sys_ssh_private_key_file} echo Ok || exit 1
 
+installation_manifest_file=${assets_dir}/installation-manifest.txt
+if [ ! -f ${installation_manifest_file} ]; then
+	echo_info "Creating ${installation_manifest_file} ..."
+	touch ${installation_manifest_file}
+	chmod ${ASSET_FILE_MODE} ${installation_manifest_file}
+fi
+
 echo_info "Running apt-get update ..."
 retry_if_fail sudo apt-get update --yes
 
@@ -266,8 +273,17 @@ retry_if_fail sudo apt-get upgrade --yes
 echo_info "Installing or updating software-properties-common ..."
 retry_if_fail sudo apt-get install --yes software-properties-common
 
-echo_info "Installing or updating git ..."
-retry_if_fail sudo apt-get install --yes git
+which git > /dev/null 2>&1
+if [ ${?} -ne 0 ]; then
+	echo_info "Installing git ..."
+	retry_if_fail sudo apt-get install --yes git
+
+	grep -xq git ${installation_manifest_file} > /dev/null 2>&1
+	if [ ${?} -ne 0 ]; then
+		echo_info "Adding git to ${installation_manifest_file} ..."
+		echo git >> ${installation_manifest_file}
+	fi
+fi
 
 # ansible-dev-sys: Where is it, and is it being managed by an external process?
 # If ansible-dev-sys is being managed by an external process, then this script will not update it.

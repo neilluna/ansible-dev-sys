@@ -11,11 +11,9 @@
 
   - role: bash_environment
     tags: always
-    when: "'bash_environment' not in roles_evaluated"
 
   - role: dev_sys
     tags: always
-    when: "'dev_sys' not in roles_evaluated"
 
   - role: docker
     tags: docker
@@ -36,7 +34,6 @@
 
   - role: git
     tags: git
-    when: "'git' not in roles_evaluated"
 
   - role: go
     tags: go
@@ -74,7 +71,6 @@
 
   - role: pyenv_environment
     tags: always
-    when: "'pyenv_environment' not in roles_evaluated"
 
   - role: python
     tags: python2

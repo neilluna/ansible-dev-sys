@@ -1,0 +1,38 @@
+---
+- when: not bash_environment_managed_externally
+  block:
+
+  - name: '{{ "Cloning" if action == "install" else "Updating" }} the repository ...'
+    git:
+      repo: https://github.com/neilluna/bash-environment.git
+      dest: '{{ bash_environment_dir }}'
+      version: '{{ bash_environment_version }}'
+    register: bash_environment_git_status
+
+  - name: Checking if the repository is new or has changed ...
+    set_fact:
+      bash_environment_run_install: '{{ bash_environment_git_status.before != bash_environment_git_status.after }}'
+
+  - when: bash_environment_run_install
+    name: Setting the local core filemode to false ...
+    git_config:
+      name: core.filemode
+      repo: '{{ bash_environment_dir }}'
+      scope: local
+      value: 'false'
+
+  # End of block: when: not bash_environment_managed_externally
+
+- when: bash_environment_run_install
+  block:
+
+  - name: Making {{ bash_environment_dir }}/install.sh executable ...
+    file:
+      path: '{{ bash_environment_dir }}/install.sh'
+      state: file
+      mode: u+x
+
+  - name: Running {{ bash_environment_dir }}/install.sh ...
+    shell: '{{ bash_environment_dir }}/install.sh'
+
+  # End of block: when: bash_environment_run_install

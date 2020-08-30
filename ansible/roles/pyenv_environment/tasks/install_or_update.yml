@@ -1,0 +1,6 @@
+---
+- name: '{{ "Installing" if action == "install" else "Updating" }} ~/.bashrc.d/pyenv-vars.sh ...'
+  copy:
+    src: .bashrc.d/pyenv-vars.sh
+    dest: ~/.bashrc.d/pyenv-vars.sh
+    mode: u+x

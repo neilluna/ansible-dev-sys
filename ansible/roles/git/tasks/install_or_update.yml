@@ -1,0 +1,7 @@
+---
+- name: '{{ "Installing" if action == "install" else "Updating" }} git ...'
+  apt:
+    name: git
+    force_apt_get: yes
+    state: latest
+  become: yes

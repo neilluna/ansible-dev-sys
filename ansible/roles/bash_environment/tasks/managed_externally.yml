@@ -1,4 +1,0 @@
----
-  - name: Checking if an install has been requested ...
-    set_fact:
-      run_install: '{{ bash_environment_run_install }}'

@@ -1,4 +1,3 @@
 ---
 dependencies:
 - role: git
-  when: "'git' not in roles_evaluated"

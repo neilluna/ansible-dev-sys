@@ -1,0 +1,6 @@
+---
+- name: '{{ "Installing" if action == "install" else "Updating" }} ~/bin/dev-sys.sh ...'
+  copy:
+    src: bin/dev-sys.sh
+    dest: ~/bin/dev-sys.sh
+    mode: u+x

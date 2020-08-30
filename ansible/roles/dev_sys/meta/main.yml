@@ -1,4 +1,3 @@
 ---
 dependencies:
 - role: bash_environment
-  when: "'bash_environment' not in roles_evaluated"

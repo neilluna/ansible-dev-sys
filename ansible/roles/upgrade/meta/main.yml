@@ -1,4 +1,0 @@
----
-dependencies:
-- role: update
-  when: "'update' not in roles_evaluated"

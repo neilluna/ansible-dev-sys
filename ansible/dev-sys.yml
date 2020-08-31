@@ -102,14 +102,6 @@
     tags: zip
     when: "'zip' not in roles_evaluated"
 
-  - role: update
-    tags: update
-    when: "'update' not in roles_evaluated"
-
-  - role: upgrade
-    tags: upgrade
-    when: "'upgrade' not in roles_evaluated"
-
   - role: yq
     tags: yq
     when: "'yq' not in roles_evaluated"

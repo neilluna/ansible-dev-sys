@@ -1,0 +1,36 @@
+---
+- name: Checking if ruby is installed ...
+  command: which ruby
+  register: which_ruby
+  changed_when: false
+  failed_when: false
+
+- when: which_ruby.rc != 0
+  block:
+
+  - import_tasks: tasks/install_or_update.yml
+    vars:
+      action: install
+
+  - name: Adding {{ role_name }} to ~/.dev-sys/installation-manifest.txt ...
+    lineinfile:
+      path: ~/.dev-sys/installation-manifest.txt
+      line: '{{ role_name }}'
+
+  # End of block: when: when: which_ruby.rc != 0
+
+- when: which_ruby.rc == 0
+  block:
+
+  - name: Checking if {{ role_name }} is in ~/.dev-sys/installation-manifest.txt ...
+    command: grep -xq {{ role_name }} ~/.dev-sys/installation-manifest.txt
+    register: grep_manifest_for_ruby
+    changed_when: false
+    failed_when: false
+
+  - when: grep_manifest_for_ruby.rc == 0
+    import_tasks: tasks/install_or_update.yml
+    vars:
+      action: update
+
+  # End of block: when: which_ruby.rc == 0

@@ -1,11 +1,8 @@
 ---
-- name: Installing ...
-  apt:
-    name: unzip
-    force_apt_get: yes
-    state: latest
-  become: yes
+- when: role_name not in roles_evaluated
+  import_tasks: tasks/evaluate.yml
 
-- name: Marking the role as evaluated ...
+- when: role_name not in roles_evaluated
+  name: Marking {{ role_name }} as evaluated ...
   set_fact:
-    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"
+    roles_evaluated: '{{ roles_evaluated + [ role_name ] }}'

@@ -43,7 +43,6 @@
 
   - role: jq
     tags: jq
-    when: "'jq' not in roles_evaluated"
 
   - role: mercurial
     tags: mercurial
@@ -86,7 +85,6 @@
 
   - role: ruby
     tags: ruby
-    when: "'ruby' not in roles_evaluated"
 
   - role: sceptre
     tags: sceptre
@@ -96,11 +94,9 @@
 
   - role: sqlite
     tags: sqlite
-    when: "'sqlite' not in roles_evaluated"
 
   - role: unzip
     tags: zip
-    when: "'zip' not in roles_evaluated"
 
   - role: yq
     tags: yq
@@ -108,4 +104,3 @@
 
   - role: zip
     tags: zip
-    when: "'zip' not in roles_evaluated"

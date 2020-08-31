@@ -1,0 +1,7 @@
+---
+- name: '{{ "Installing" if action == "install" else "Updating" }} jq ...'
+  apt:
+    name: jq
+    force_apt_get: yes
+    state: latest
+  become: yes

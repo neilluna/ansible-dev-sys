@@ -1,21 +1,8 @@
 ---
-- name: Checking if version {{ python_version }} is installed ...
-  stat:
-    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ python_version }}"
-  register: python_version_status
+- when: (role_name ~ '-' ~ python_version) not in roles_evaluated
+  import_tasks: tasks/evaluate.yml
 
-- name: Installing version {{ python_version }} ...
-  when: python_version_status.stat.exists == false
-  args:
-    executable: /bin/bash
-  shell: >
-    source {{ ansible_user_dir }}/.dev-sys/pyenv/pyenv-vars.sh &&
-    pyenv install {{ python_version }}
-
-- name: Marking the Python version as evaluated ...
+- when: (role_name ~ '-' ~ python_version) not in roles_evaluated
+  name: Marking {{ role_name ~ '-' ~ python_version }} as evaluated ...
   set_fact:
-    python_versions_evaluated: "{{ python_versions_evaluated }} + [ '{{ python_version }}' ]"
-
-- name: Marking the role as evaluated ...
-  set_fact:
-    roles_evaluated: "{{ roles_evaluated }} + [ '{{ role_name }}' ]"
+    roles_evaluated: "{{ roles_evaluated + [ (role_name ~ '-' ~ python_version) ] }}"

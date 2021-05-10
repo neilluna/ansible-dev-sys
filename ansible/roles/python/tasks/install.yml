@@ -1,0 +1,8 @@
+---
+- name: Installing Python {{ python_version }} ...
+  args:
+    executable: /bin/bash
+  shell: >
+    source ~/.dev-sys/pyenv/pyenv-vars.sh &&
+    pyenv install {{ python_version }} &&
+    pyenv rehash

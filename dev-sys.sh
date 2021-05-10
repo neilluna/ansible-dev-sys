@@ -391,9 +391,17 @@ if [ -z "${PYENV_ROOT}" ]; then
 	# The best that we can do is to run pyenv doctor after the installation.
 	echo_info "Installing pyenv ..."
 	${pyenv_installer_script}
+	grep -xq pyenv ${installation_manifest_file} > /dev/null 2>&1
+	if [ ${?} -ne 0 ]; then
+		echo_info "Adding pyenv to ${installation_manifest_file} ..."
+		echo pyenv >> ${installation_manifest_file}
+	fi
 else
-	echo_info "Updating pyenv ..."
-	retry_if_fail pyenv update
+	grep -xq pyenv ${installation_manifest_file} > /dev/null 2>&1
+	if [ ${?} -eq 0 ]; then
+		echo_info "Updating pyenv ..."
+		retry_if_fail pyenv update
+	fi
 fi
 
 # Create or update the pyenv script for bash-environment.
@@ -422,6 +430,9 @@ if [ ! -d ${PYENV_ROOT}/versions/${python_version} ]; then
 	echo_info "Installing Python ${python_version} for the dev-sys Python virtual environment ..."
 	retry_if_fail pyenv install ${python_version}
 	pyenv rehash
+
+	echo_info "Adding python-${python_version} to ${installation_manifest_file} ..."
+	echo python-${python_version} >> ${installation_manifest_file}
 fi
 
 # Create or replace the dev-sys Python virtual environment.
@@ -434,7 +445,7 @@ if [ ! -d ${PYENV_ROOT}/versions/${python_version}/envs/dev-sys ]; then
 	pyenv virtualenv ${python_version} dev-sys
 fi
 echo_info "Activating the dev-sys Python virtual environment ..."
-export PYENV_VERSION=dev-sys 
+export PYENV_VERSION=dev-sys
 
 # Install or update Ansible.
 if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then

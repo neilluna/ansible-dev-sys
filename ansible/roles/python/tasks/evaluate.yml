@@ -1,0 +1,19 @@
+---
+- name: Checking if Python {{ python_version }} is installed ...
+  stat:
+    path: "{{ lookup('env','PYENV_ROOT') }}/versions/{{ python_version }}"
+  register: stat_python_version
+
+- when: not stat_python_version.stat.exists
+  block:
+
+  - import_tasks: tasks/install.yml
+    vars:
+      action: install
+
+  - name: Adding {{ role_name ~ '-' ~ python_version }} to ~/.dev-sys/installation-manifest.txt ...
+    lineinfile:
+      path: ~/.dev-sys/installation-manifest.txt
+      line: "{{ role_name ~ '-' ~ python_version }}"
+
+  # End of block: when: not stat_python_version.stat.exists

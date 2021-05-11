@@ -383,7 +383,7 @@ if [ -z "${PYENV_ROOT}" ]; then
 	EOF
 	cat <<-'EOF' >> ${pyenv_vars_script}
 	PATH="${PYENV_ROOT}/bin:${PATH}"
-	eval "$(pyenv init -)"
+	eval "$(pyenv init --path)"
 	eval "$(pyenv virtualenv-init -)"
 	EOF
 	chmod ${ASSET_SCRIPT_MODE} ${pyenv_vars_script}

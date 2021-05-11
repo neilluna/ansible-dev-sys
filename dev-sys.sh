@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-script_version=0.2.1
+script_version=0.2.2
 
 script_name=$(basename ${BASH_SOURCE[0]})
 script_dir=$(dirname ${BASH_SOURCE[0]})

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-script_version=0.2.1
+script_version=0.2.2
 
 script_name=$(basename ${BASH_SOURCE[0]})
 script_dir=$(dirname ${BASH_SOURCE[0]})
@@ -350,16 +350,18 @@ if [ -f ${bash_environment_vars_script} ]; then
 	source ${bash_environment_vars_script}
 fi
 
+# Install or update the pyenv dependencies.
+# https://github.com/pyenv/pyenv/wiki#suggested-build-environment
+echo_info "Installing or updating the pyenv prerequisites ..."
+retry_if_fail sudo apt-get install --yes make build-essential libssl-dev zlib1g-dev \
+libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+
 # Install or update pyenv.
 # Using pyenv will reduce the risk of corrupting the system Python.
 pyenv_assets_dir=${assets_dir}/pyenv
 create_dir_with_mode ${ASSET_DIR_MODE} ${pyenv_assets_dir}
 if [ -z "${PYENV_ROOT}" ]; then
-	echo_info "Installing the pyenv prerequisites ..."
-	retry_if_fail sudo apt-get install --yes build-essential libssl-dev zlib1g-dev libbz2-dev \
-	libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-	xz-utils tk-dev libffi-dev liblzma-dev python-openssl git make
-
 	export PYENV_ROOT=${HOME}/.pyenv
 	export PATH=${PYENV_ROOT}/bin:${PATH}
 
@@ -373,30 +375,30 @@ if [ -z "${PYENV_ROOT}" ]; then
 	# The best that we can do is to run pyenv doctor after the installation.
 	echo_info "Installing pyenv ..."
 	${pyenv_installer_script}
-
-	# Create or update the pyenv script for bash-environment.
-	pyenv_vars_script=${pyenv_assets_dir}/pyenv-vars.sh
-	echo_info "Creating ${pyenv_vars_script} ..."
-	cat <<-EOF > ${pyenv_vars_script}
-	#!/usr/bin/env bash
-	export PYENV_ROOT="${PYENV_ROOT}"
-	EOF
-	cat <<-'EOF' >> ${pyenv_vars_script}
-	PATH="${PYENV_ROOT}/bin:${PATH}"
-	eval "$(pyenv init -)"
-	eval "$(pyenv virtualenv-init -)"
-	EOF
-	chmod ${ASSET_SCRIPT_MODE} ${pyenv_vars_script}
-
-	echo_info "Sourcing ${pyenv_vars_script} ..."
-	source ${pyenv_vars_script}
-
-	echo_info "Checking pyenv ..."
-	pyenv doctor --cpython || exit 1
 else
 	echo_info "Updating pyenv ..."
 	retry_if_fail pyenv update
 fi
+
+# Create or update the pyenv script for bash-environment.
+pyenv_vars_script=${pyenv_assets_dir}/pyenv-vars.sh
+echo_info "Creating ${pyenv_vars_script} ..."
+cat << EOF > ${pyenv_vars_script}
+#!/usr/bin/env bash
+export PYENV_ROOT="${PYENV_ROOT}"
+EOF
+cat << 'EOF' >> ${pyenv_vars_script}
+PATH="${PYENV_ROOT}/bin:${PATH}"
+eval "$(pyenv init --path)"
+eval "$(pyenv virtualenv-init -)"
+EOF
+chmod ${ASSET_SCRIPT_MODE} ${pyenv_vars_script}
+
+echo_info "Sourcing ${pyenv_vars_script} ..."
+source ${pyenv_vars_script}
+
+echo_info "Checking pyenv ..."
+pyenv doctor --cpython || exit 1
 
 # Install an isolated instance of Python for use by the dev-sys tools and Ansible.
 python_version=3.8.3

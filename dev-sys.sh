@@ -391,11 +391,9 @@ if [ -z "${PYENV_ROOT}" ]; then
 	# The best that we can do is to run pyenv doctor after the installation.
 	echo_info "Installing pyenv ..."
 	${pyenv_installer_script}
-	grep -xq pyenv ${installation_manifest_file} > /dev/null 2>&1
-	if [ ${?} -ne 0 ]; then
-		echo_info "Adding pyenv to ${installation_manifest_file} ..."
-		echo pyenv >> ${installation_manifest_file}
-	fi
+
+	echo_info "Adding pyenv to ${installation_manifest_file} ..."
+	echo pyenv >> ${installation_manifest_file}
 else
 	grep -xq pyenv ${installation_manifest_file} > /dev/null 2>&1
 	if [ ${?} -eq 0 ]; then

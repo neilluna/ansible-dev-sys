@@ -420,13 +420,17 @@ echo_info "Activating the dev-sys Python virtual environment ..."
 export PYENV_VERSION=dev-sys 
 
 # Install or update Ansible.
-if [ -z "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
-	echo_info "Installing Ansible ..."
-	retry_if_fail pip install ansible --disable-pip-version-check
-else
-	echo_info "Updating Ansible ..."
-	retry_if_fail pip install ansible --upgrade --disable-pip-version-check
+# Upgrading Ansible with pip is known to cause problems. Uninstall the old versions first.
+if [ "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible"')" ]; then
+	echo_info "Uninstalling Ansible ..."
+	retry_if_fail pip uninstall ansible --disable-pip-version-check --yes
 fi
+if [ "$(pip list --disable-pip-version-check 2>/dev/null | awk '$1 == "ansible-base"')" ]; then
+	echo_info "Uninstalling Ansible base ..."
+	retry_if_fail pip uninstall ansible-base --disable-pip-version-check --yes
+fi
+echo_info "Installing Ansible ..."
+retry_if_fail pip install ansible --disable-pip-version-check
 
 # Create the Ansible provisioning directory.
 # This is where Ansible-related files will be stored.
